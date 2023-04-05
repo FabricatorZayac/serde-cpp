@@ -3,6 +3,58 @@
 
 #include "cursed_macros.h"
 
+#define __FIELD(x, ...) __VA_OPT__(CAR(__VA_ARGS__) x;)
+#define _FIELD(x) __FIELD x
+
+// VALUE is (TAG, TYPE)
+#define __DATA_VALUE_FILTER(TAG, ...) __VA_OPT__((TAG, CAR(__VA_ARGS__)),)
+#define DATA_VALUE_FILTER(VALUE) __DATA_VALUE_FILTER VALUE
+
+// I may rework the way I do constructors for sum types
+#define _DATA_CONSTRUCTOR_BODY(TAG, ...) \
+    (CAR(__VA_ARGS__) x) : tag(Tag::TAG), TAG(x) {}
+
+#define DATA_CONSTRUCTOR_BODY(VALUE) _DATA_CONSTRUCTOR_BODY VALUE
+#define DATA_CONSTRUCTOR(TYPENAME) TYPENAME DATA_CONSTRUCTOR_BODY
+
+#define _DATA_COPY_CONSTRUCTOR(TAG, ...)                      \
+    __VA_OPT__(case Tag::TAG:                                 \
+               new (&this->TAG) CAR(__VA_ARGS__)(source.TAG); \
+               break;)
+#define DATA_COPY_CONSTRUCTOR(VALUE) _DATA_COPY_CONSTRUCTOR VALUE
+
+#define _DATA_DESTRUCTOR(TAG, ...)            \
+    __VA_OPT__(case Tag::TAG:                 \
+               this->TAG.~CAR(__VA_ARGS__)(); \
+               break;)
+#define DATA_DESTRUCTOR(VALUE) _DATA_DESTRUCTOR VALUE
+
+/**
+ * @brief   Generic definition of a Rust-like Enum (sum type)
+ * @details Usage:
+ *              data(NAME,
+ *                   (TAG, TYPE),
+ *                   ...)
+ * @param   NAME name of the surrounding struct
+ * @param   ... Type definition
+ */
+#define data(NAME, ...)                                 \
+    union {                                             \
+        FOREACH(_FIELD, __VA_ARGS__)                    \
+    };                                                  \
+    enum Tag tag;                                       \
+    FOREACH(DATA_CONSTRUCTOR(NAME), __VA_ARGS__)        \
+    NAME(const NAME &source) : tag(source.tag) {        \
+        switch (source.tag) {                           \
+            FOREACH(DATA_COPY_CONSTRUCTOR, __VA_ARGS__) \
+        }                                               \
+    }                                                   \
+    ~NAME() {                                           \
+        switch (this->tag) {                            \
+            FOREACH(DATA_DESTRUCTOR, __VA_ARGS__)       \
+        }                                               \
+    }
+
 /**
  * @brief   Rust-like match statement (not an expression!)
  * @details Match statement only works with enums directly accessible in the namespace.
