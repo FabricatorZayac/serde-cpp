@@ -78,4 +78,8 @@
 
 #define FOREACH(macro ,...) VFUNC(macro, __VA_ARGS__)
 
+#define CAR(x, ...) x
+#define CDR(_, ...) __VA_ARGS__
+
+
 #endif  // CURSED_MACROS_H_
