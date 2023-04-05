@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "error.hpp"
 #include "option.hpp"
 #include "cursed_macros.h"
 #include "datatype.hpp"
@@ -12,28 +13,30 @@ namespace result {
     enum Tag { Ok, Err };
     template<typename T, typename E>
     class Result {
-        Result();
+        Result() = delete;
     public:
-        union Body {
+        union {
             T Ok;
             E Err;
-            Body(){}
-        } body;
+        };
         enum Tag tag;
-        Result(T Ok) {
-            this->tag = Tag::Ok;
-            this->body.Ok = Ok;
-        }
-        Result(E Err) {
-            this->tag = Tag::Err;
-            this->body.Err = Err;
+        Result(T ok) : tag(Tag::Ok), Ok(ok) {}
+        Result(E err) : tag(Tag::Err), Err(err) {}
+        Result(const Result &res) : tag(res.tag) {
+            switch (res.tag) {
+                case Tag::Ok:
+                    new (&this->Ok) T(res.Ok);
+                    break;
+                case Tag::Err:
+                    new (&this->Err) E(res.Err);
+                    break;
+            }
         }
         ~Result() {
-            // replace with pattern matching
-            if (this->is_ok()) {
-                this->body.Ok.~T();
-            }
-            this->body.Err.~E();
+            if (this->is_ok())
+                this->Ok.~T();
+            else
+                this->Err.~E();
         }
         bool is_ok() {
             return this->tag == Tag::Ok ? true : false;
@@ -43,16 +46,16 @@ namespace result {
         }
         T unwrap() {
             if (this->is_ok()) {
-                return this->body.Ok;
+                return this->Ok;
             }
             exit(1);
         }
         option::Option<T> ok() {
-            if (this->is_ok()) return this->body.Ok;
+            if (this->is_ok()) return this->Ok;
             return None;
         }
         option::Option<E> err() {
-            if (this->is_err()) return this->body.Err;
+            if (this->is_err()) return this->Err;
             return None;
         }
     };
@@ -60,10 +63,11 @@ namespace result {
 using enum result::Tag;
 
 // I feel a little guilty using GNU extrensions, but whatever, this is C++ baybe
-#define TRY(res)                                     \
-    ({                                               \
-        if (res.is_err()) return res.err().unwrap(); \
-        res.unwrap();                                \
+#define TRY(EXPR)                                            \
+    ({                                                       \
+        auto ___temp = EXPR;                                 \
+        if (___temp.is_err()) return ___temp.err().unwrap(); \
+        ___temp.unwrap();                                    \
     })
 
 #endif // !RESULT_H_

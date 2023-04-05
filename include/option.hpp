@@ -11,25 +11,19 @@ namespace option {
     class Option {
         Option();
     public:
-        union Body {
+        union {
             T Some;
-            Body(){}
-        } body;
+        };
         enum Tag tag;
-        Option(T some) {
-            this->tag = Tag::Some;
-            this->body.Some = some;
-        }
-        Option(enum Tag tag) {
-            this->tag = Tag::None;
-        }
+        Option(T some) : tag(Tag::Some), Some(some) {}
+        // temporary kinda shit solution
+        // TODO: think of a better way to construct empty variants
+        Option(enum Tag tag = Tag::None) : tag(Tag::None) {}
         ~Option() {
-            if (this->is_some()) {
-                this->body.Some.~T();
-            }
+            if (this->is_some()) this->Some.~T();
         }
         T unwrap() {
-            if (this->tag == Tag::Some) return this->body.Some;
+            if (this->tag == Tag::Some) return this->Some;
             exit(1);
         }
         bool is_some() {
@@ -40,6 +34,6 @@ namespace option {
         }
     };
 }
-using enum option::Tag;
+using enum option::Tag; // Kinda evil, but I don't know how to make match work otherwise
 
 #endif // !OPTION_H_
