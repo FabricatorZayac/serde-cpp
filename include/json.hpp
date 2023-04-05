@@ -73,6 +73,9 @@ namespace json {
         serializer.serialize(value);
         return serializer.output;
     }
+}
+
+namespace json {
     namespace de {
         struct Deserializer {
             const char *input;
@@ -139,10 +142,6 @@ namespace json {
                 return res;
             }
         };
-        template<typename T>
-        class Visitor {
-            // TODO
-        };
     }
     template<typename T>
     T into(const char *json) {
@@ -151,7 +150,16 @@ namespace json {
     }
 }
 
-#define _SER_FIELD(field, ...) TRY(ser->serialize_field(#field, field));
+namespace json {
+    namespace de {
+        template<typename T>
+        struct Visitor {
+
+        };
+    }
+}
+
+#define _SER_FIELD(field) TRY(ser->serialize_field(#field, field));
 
 /**
  * Specify `Serializer` with `using`
