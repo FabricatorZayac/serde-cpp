@@ -10,34 +10,10 @@
 #include "datatype.hpp"
 
 namespace result {
-    enum Tag { Ok, Err };
+    enum class Tag { Ok, Err };
     template<typename T, typename E>
-    class Result {
-        Result() = delete;
-    public:
-        union {
-            T Ok;
-            E Err;
-        };
-        enum Tag tag;
-        Result(T ok) : tag(Tag::Ok), Ok(ok) {}
-        Result(E err) : tag(Tag::Err), Err(err) {}
-        Result(const Result &res) : tag(res.tag) {
-            switch (res.tag) {
-                case Tag::Ok:
-                    new (&this->Ok) T(res.Ok);
-                    break;
-                case Tag::Err:
-                    new (&this->Err) E(res.Err);
-                    break;
-            }
-        }
-        ~Result() {
-            if (this->is_ok())
-                this->Ok.~T();
-            else
-                this->Err.~E();
-        }
+    struct Result {
+        data(Result, (Ok, T), (Err, E))
         bool is_ok() {
             return this->tag == Tag::Ok ? true : false;
         }
