@@ -1,6 +1,7 @@
 #ifndef OPTION_H_
 #define OPTION_H_
 
+#include "datatype.hpp"
 #include <cstdlib>
 
 #pragma clang diagnostic ignored "-Wc++20-extensions"
@@ -9,19 +10,8 @@ namespace option {
     enum class Tag { Some, None };
     template<typename T>
     class Option {
-        Option();
     public:
-        union {
-            T Some;
-        };
-        enum Tag tag;
-        Option(T some) : tag(Tag::Some), Some(some) {}
-        // temporary kinda shit solution
-        // TODO: think of a better way to construct empty variants
-        Option(enum Tag tag = Tag::None) : tag(Tag::None) {}
-        ~Option() {
-            if (this->is_some()) this->Some.~T();
-        }
+        data(Option, (Some, T), (None))
         T unwrap() {
             if (this->tag == Tag::Some) return this->Some;
             exit(1);

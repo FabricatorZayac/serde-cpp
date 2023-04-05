@@ -28,11 +28,11 @@ namespace result {
         }
         option::Option<T> ok() {
             if (this->is_ok()) return this->Ok;
-            return None;
+            return {};
         }
         option::Option<E> err() {
             if (this->is_err()) return this->Err;
-            return None;
+            return {};
         }
     };
 }

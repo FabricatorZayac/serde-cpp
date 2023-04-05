@@ -7,26 +7,24 @@
 #define _FIELD(x) __FIELD x
 
 // VALUE is (TAG, TYPE)
-#define __DATA_VALUE_FILTER(TAG, ...) __VA_OPT__((TAG, CAR(__VA_ARGS__)),)
-#define DATA_VALUE_FILTER(VALUE) __DATA_VALUE_FILTER VALUE
 
 // I may rework the way I do constructors for sum types
 #define _DATA_CONSTRUCTOR_BODY(TAG, ...) \
-    (CAR(__VA_ARGS__) x) : tag(Tag::TAG), TAG(x) {}
+    (__VA_OPT__(CAR(__VA_ARGS__) x)) : tag(Tag::TAG) __VA_OPT__(, TAG(x)) {}
 
 #define DATA_CONSTRUCTOR_BODY(VALUE) _DATA_CONSTRUCTOR_BODY VALUE
 #define DATA_CONSTRUCTOR(TYPENAME) TYPENAME DATA_CONSTRUCTOR_BODY
 
-#define _DATA_COPY_CONSTRUCTOR(TAG, ...)                      \
-    __VA_OPT__(case Tag::TAG:                                 \
-               new (&this->TAG) CAR(__VA_ARGS__)(source.TAG); \
-               break;)
+#define _DATA_COPY_CONSTRUCTOR(TAG, ...)                       \
+    case Tag::TAG:                                             \
+    __VA_OPT__(new (&this->TAG) CAR(__VA_ARGS__)(source.TAG);) \
+    break;
 #define DATA_COPY_CONSTRUCTOR(VALUE) _DATA_COPY_CONSTRUCTOR VALUE
 
-#define _DATA_DESTRUCTOR(TAG, ...)            \
-    __VA_OPT__(case Tag::TAG:                 \
-               this->TAG.~CAR(__VA_ARGS__)(); \
-               break;)
+#define _DATA_DESTRUCTOR(TAG, ...)             \
+    case Tag::TAG:                             \
+    __VA_OPT__(this->TAG.~CAR(__VA_ARGS__)();) \
+               break;
 #define DATA_DESTRUCTOR(VALUE) _DATA_DESTRUCTOR VALUE
 
 /**
