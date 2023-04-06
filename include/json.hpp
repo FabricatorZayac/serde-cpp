@@ -13,41 +13,39 @@
 namespace json {
     namespace ser {
         struct Serializer {
-            using SerializeStruct = Serializer;
-            using Ok = struct {};
-            using Err = error::Error;
-
-            // Result alias
-            template<typename T>
-            struct Result : result::Result<T, Err> {
-                Result(error::Error e) : result::Result<T, Err>(e) {}
-                Result(T ok) : result::Result<T, Err>(ok) {}
-            };
-
             std::string output;
 
-            Result<Ok> serialize(bool &v) {
+            using SerializeStruct = Serializer;
+            using Unit = struct {};
+
+            template<typename T>
+            using Result = result::Result<T, error::Error>;
+
+            template<typename T>
+            using Ok = result::Ok<T>;
+
+            Result<Unit> serialize(bool &v) {
                 this->output += v ? "true" : "false";
-                return Ok();
+                return Ok<Unit>(Unit());
             }
-            Result<Ok> serialize(int &v) {
+            Result<Unit> serialize(int &v) {
                 this->output += std::to_string(v);
-                return Ok();
+                return Ok<Unit>(Unit());
             }
-            Result<Ok> serialize(const char *v) {
+            Result<Unit> serialize(const char *v) {
                 this->output += "\"";
                 this->output += v;
                 this->output += "\"";
-                return Ok();
+                return Ok<Unit>(Unit());
             }
             template<typename T>
-            Result<Ok> serialize(T &v) {
+            Result<Unit> serialize(T &v) {
                 v.serialize(*this);
-                return Ok();
+                return Ok<Unit>(Unit());
             }
             Result<SerializeStruct *> serialize_struct() {
                 this->output += "{";
-                return this;
+                return Ok<SerializeStruct *>(this);
             }
             template<typename T>
             Result<SerializeStruct *> serialize_field(const char *key, T &value) {
@@ -57,11 +55,11 @@ namespace json {
                 serialize(key);
                 this->output += ":";
                 serialize(value);
-                return this;
+                return Ok<SerializeStruct *>(this);
             }
-            Result<Ok> end() {
+            Result<Unit> end() {
                 this->output += "}";
-                return Ok();
+                return Ok<Unit>(Unit());
             }
         };
     }
@@ -71,7 +69,7 @@ namespace json {
     from(T &value) {
         ser::Serializer serializer;
         serializer.serialize(value);
-        return serializer.output;
+        return {Ok, serializer.output};
     }
 }
 
@@ -84,36 +82,37 @@ namespace json {
             // Result alias
             template<typename T>
             struct Result : result::Result<T, Error> {
-                Result(error::Error e) : result::Result<T, Error>(e) {}
-                Result(T ok) : result::Result<T, Error>(ok) {}
+                Result(enum result::Tag tag, error::Error e) : result::Result<T, Error>(tag, e) {}
+                Result(enum result::Tag tag, T ok) : result::Result<T, Error>(tag, ok) {}
             };
 
             // Parsing
             Result<char> peek_char() {
                 if (*this->input == '\0') {
-                    return Error("EOF");
+                    return {Err, Error("EOF")};
                 } else {
-                    return *this->input;
+                    return {Ok, *this->input};
                 }
             }
             Result<char> next_char() {
                 char ch = TRY(this->peek_char());
                 this->input++;
-                return ch;
+                return {Ok, ch};
             }
             Result<bool> parse_bool() {
                 if (strncmp(this->input, "true", 4) == 0) {
                     this->input += strlen("true");
-                    return true;
+                    return {Ok, true};
                 } else if (strncmp(this->input, "false", 5) == 0) {
-                    return false;
+                    return {Ok, false};
                 }
-                return Error("Expected bool");
+                return {Err, Error("Expected bool")};
             }
             template<typename T>
             Result<T> parse_unsigned() {
                 char ch = TRY(this->next_char());
-                if (ch <= '0' || ch >= '9') return Error("Expected unsigned integer");
+                if (ch <= '0' || ch >= '9')
+                    return {Err, Error("Expected unsigned integer")};
                 T res = ch - '0';
                 while (true) {
                     match(this->peek_char()) {{
@@ -122,7 +121,7 @@ namespace json {
                             res *= 10;
                             res += ch - '0';
                         }
-                        of_default { return res; }
+                        of_default { return {Ok, res}; }
                     }}
                 }
             }
@@ -131,15 +130,15 @@ namespace json {
                 bool neg = TRY(this->peek_char()) == '-';
                 if (neg) this->input++;
                 T res = TRY(this->parse_unsigned<T>());
-                return neg ? -res : res;
+                return {Ok, neg ? -res : res};
             }
             Result<str> parse_string() {
-                if (TRY(this->next_char()) != '"') return Error("Expected string");
+                if (TRY(this->next_char()) != '"') return {Err, Error("Expected string")};
                 const char *end = strchr(this->input, '"');
-                if (end == NULL) return Error("EOF");
+                if (end == NULL) return {Err, Error("EOF")};
                 str res(this->input, end - this->input);
                 this->input = end + 1;
-                return res;
+                return {Ok, res};
             }
         };
     }
@@ -172,7 +171,7 @@ namespace json {
         auto ser = TRY(serializer.serialize_struct()); \
         FOREACH(_SER_FIELD, __VA_ARGS__);              \
         TRY(ser->end());                               \
-        return Unit();                                 \
+        return {Ok, Unit()};                           \
     }
 
 #endif // JSON_H_
