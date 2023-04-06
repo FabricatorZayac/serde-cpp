@@ -1,8 +1,6 @@
 #ifndef ERROR_H_
 #define ERROR_H_
 
-#include <string>
-
 namespace error {
     class Error {
         const char *message;

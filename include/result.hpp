@@ -11,11 +11,9 @@
 #include "datatype.hpp"
 
 namespace result {
-    enum class Tag { Ok, Err };
-
     template<typename T>
     struct Ok {
-        const T ok_value;
+        const T Ok_value;
 
         Ok() = default;
         ~Ok() = default;
@@ -23,9 +21,9 @@ namespace result {
         Ok(Ok&&) = delete;
         Ok(const Ok&) = delete;
 
-        Ok(const T &value) : ok_value(value) {}
+        Ok(const T &value) : Ok_value(value) {}
         template <typename... Args>
-        Ok(Args&&... args) : ok_value(static_cast<Args&&>(args)...) { }
+        Ok(Args&&... args) : Ok_value(static_cast<Args&&>(args)...) { }
     };
 
     template<typename E>
@@ -43,21 +41,7 @@ namespace result {
 
     template<typename T, typename E>
     struct Result {
-        data(Result, (Ok, T), (Err, E))
-
-        Result(const enum Tag tag, T Ok) {
-            assert(tag == Tag::Ok);
-            this->tag = Tag::Ok;
-            new(&this->Ok) T(Ok);
-        }
-        Result(const enum Tag tag, E Err) {
-            assert(tag == Tag::Err);
-            this->tag = Tag::Err;
-            new(&this->Err) E(Err);
-        }
-
-        template<typename T1 = T>
-        Result(result::Ok<T1> &&Ok) : tag(Tag::Ok), Ok(static_cast<T1>(Ok.ok_value)) {}
+        data(Result, (Ok, T), (Err, E));
 
         bool is_ok() {
             return this->tag == Tag::Ok ? true : false;
@@ -67,13 +51,13 @@ namespace result {
         }
         T unwrap() {
             if (this->is_ok()) {
-                return this->Ok;
+                return this->Ok_val;
             }
             exit(1);
         }
         E unwrap_err() {
             if (this->is_err()) {
-                return this->Err;
+                return this->Err_val;
             }
             exit(1);
         }
@@ -87,13 +71,12 @@ namespace result {
         // }
     };
 }
-using enum result::Tag;
 
 // I feel a little guilty using GNU extrensions, but whatever, this is C++ baybe
 #define TRY(EXPR)                                                 \
     ({                                                            \
         auto ___temp = EXPR;                                      \
-        if (___temp.is_err()) return {Err, ___temp.unwrap_err()}; \
+        if (___temp.is_err()) return Err(___temp.unwrap_err()); \
         ___temp.unwrap();                                         \
     })
 

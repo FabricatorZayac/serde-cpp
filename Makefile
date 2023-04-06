@@ -19,7 +19,7 @@ OBJS        := $(patsubst $(SRC)/%.cpp, $(OBJ)/%.o, $(SRCS))
 TARGET      := $(BIN)/appname
 
 LDFLAGS     :=
-CFLAGS      := -I$(INCLUDE)
+CFLAGS      := -I$(INCLUDE) -std=c++20
 DEBUGFLAGS  := -O0 -ggdb
 
 .PHONY: all clean run debug

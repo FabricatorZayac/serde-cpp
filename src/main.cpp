@@ -33,7 +33,7 @@ void parray(T const (&arr)[N]) {
 }
 
 result::Result<double, error::Error> checked_div(double a, double b) {
-    if (b == 0) return {Err, error::Error("div by zero")};
+    if (b == 0) return Err(error::Error("div by zero"));
     else return result::Ok(a / b);
 }
 
@@ -52,7 +52,7 @@ int main() {
     assert(Deserializer("\"qwerty\"").parse_string().unwrap().equals(str("qwerty")));
 
     parray({1, 2, 3, 4});
-    std::cout << checked_div(4, 0).Err.to_str() << std::endl;
+    std::cout << checked_div(4, 0).Err_val.to_str() << std::endl;
 
     return 0;
 }

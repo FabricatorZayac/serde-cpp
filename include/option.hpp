@@ -4,14 +4,12 @@
 #include "datatype.hpp"
 #include <cstdlib>
 
-#pragma clang diagnostic ignored "-Wc++20-extensions"
-
 namespace option {
     enum class Tag { Some, None };
     template<typename T>
     class Option {
     public:
-        data(Option, (Some, T), (None))
+        // data(Option, (Some, T), (None))
         T unwrap() {
             if (this->tag == Tag::Some) return this->Some;
             exit(1);

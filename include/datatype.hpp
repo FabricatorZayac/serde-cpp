@@ -3,42 +3,40 @@
 
 #include "cursed_macros.h"
 
-#define __FIELD(x, ...) __VA_OPT__(CAR(__VA_ARGS__) x;)
-#define _FIELD(x) __FIELD x
 
-// VALUE is (TAG, TYPE)
+// FIELD is (TAG, TYPE)
+/******************************************************************************/
+#define _DATA_ENUM(TAG, ...) TAG,
+#define DATA_ENUM(FIELD) _DATA_ENUM FIELD
+/******************************************************************************/
+
+/******************************************************************************/
+#define _DATA_FIELD(TAG, ...) __VA_OPT__(CAR(__VA_ARGS__) TAG##_val;)
+#define DATA_FIELD(FIELD) _DATA_FIELD FIELD
+/******************************************************************************/
 
 /******************************************************************************/
 #define _DATA_CONSTRUCTOR_BODY(TAG, ...) \
-    (__VA_OPT__(CAR(__VA_ARGS__) x)) : tag(Tag::TAG) __VA_OPT__(, TAG(x)) {}
+    (TAG<CAR(__VA_ARGS__)> &&TAG) : tag(Tag::TAG) __VA_OPT__(, TAG##_val(TAG.TAG##_value)) {}
 
-#define DATA_CONSTRUCTOR_BODY(VALUE) _DATA_CONSTRUCTOR_BODY VALUE
+#define DATA_CONSTRUCTOR_BODY(FIELD) _DATA_CONSTRUCTOR_BODY FIELD
 #define DATA_CONSTRUCTOR(TYPENAME) TYPENAME DATA_CONSTRUCTOR_BODY
 /******************************************************************************/
 
 /******************************************************************************/
-#define _DATA_COPY_CONSTRUCTOR(TAG, ...)                       \
-    case Tag::TAG:                                             \
-    __VA_OPT__(new (&this->TAG) CAR(__VA_ARGS__)(source.TAG);) \
+#define _DATA_COPY_CONSTRUCTOR(TAG, ...)                             \
+    case Tag::TAG:                                                   \
+    __VA_OPT__(new (&this->TAG) CAR(__VA_ARGS__)(source.TAG##_val);) \
     break;
-#define DATA_COPY_CONSTRUCTOR(VALUE) _DATA_COPY_CONSTRUCTOR VALUE
+#define DATA_COPY_CONSTRUCTOR(FIELD) _DATA_COPY_CONSTRUCTOR FIELD
 /******************************************************************************/
 
 /******************************************************************************/
-#define _DATA_DESTRUCTOR(TAG, ...)             \
-    case Tag::TAG:                             \
-    __VA_OPT__(this->TAG.~CAR(__VA_ARGS__)();) \
+#define _DATA_DESTRUCTOR(TAG, ...)                   \
+    case Tag::TAG:                                   \
+    __VA_OPT__(this->TAG##_val.~CAR(__VA_ARGS__)();) \
                break;
-#define DATA_DESTRUCTOR(VALUE) _DATA_DESTRUCTOR VALUE
-/******************************************************************************/
-
-/******************************************************************************/
-#define _DATA_PUBLIC_CONSTRUCTOR(TAG, ...) \
-    case Tag::TAG:                         \
-    __VA_OPT__(new(this) CDR(__VA_ARGS__)(args...));   \
-    break;
-
-#define DATA_PUBLIC_CONSTRUCTOR(VALUE) _DATA_PUBLIC_CONSTRUCTOR VALUE
+#define DATA_DESTRUCTOR(FIELD) _DATA_DESTRUCTOR FIELD
 /******************************************************************************/
 
 /**
@@ -52,10 +50,7 @@
  */
 #define data(NAME, ...)                                   \
     public:                                               \
-    union {                                               \
-        FOREACH(_FIELD, __VA_ARGS__)                      \
-    };                                                    \
-    enum Tag tag;                                         \
+    FOREACH(DATA_CONSTRUCTOR(NAME), __VA_ARGS__)          \
     NAME(const NAME &source) : tag(source.tag) {          \
         switch (source.tag) {                             \
             FOREACH(DATA_COPY_CONSTRUCTOR, __VA_ARGS__)   \
@@ -65,6 +60,10 @@
         switch (this->tag) {                              \
             FOREACH(DATA_DESTRUCTOR, __VA_ARGS__)         \
         }                                                 \
+    }                                                     \
+    enum class Tag {FOREACH(DATA_ENUM, __VA_ARGS__)} tag; \
+    union {                                               \
+        FOREACH(DATA_FIELD, __VA_ARGS__)                  \
     }
 
 /**
@@ -92,10 +91,10 @@
  * @param ... [(TEMP[, (PREDICATE)])]
  *            If predicate doesn't hold, forwards to of_default
  */
-#define of(TAG, ...)                                        \
-    break;}                                                 \
-    case TAG:{                                              \
-        __VA_OPT__(auto CAR __VA_ARGS__ = ___self.TAG; \
+#define of(TAG, ...)                                         \
+    break;}                                                  \
+    case decltype(___self)::Tag::TAG:{                       \
+        __VA_OPT__(auto CAR __VA_ARGS__ = ___self.TAG##_val; \
                    _PATTERN_PREDICATE(CDR __VA_ARGS__))
 
 #define _PATTERN_PREDICATE(...) \
