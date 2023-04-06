@@ -52,7 +52,7 @@ int main() {
     assert(Deserializer("\"qwerty\"").parse_string().unwrap().equals(str("qwerty")));
 
     parray({1, 2, 3, 4});
-    std::cout << checked_div(4, 0).Err_val.to_str() << std::endl;
+    std::cout << checked_div(4, 0).err().unwrap().to_str() << std::endl;
 
     return 0;
 }

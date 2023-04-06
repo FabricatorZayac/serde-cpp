@@ -5,13 +5,13 @@
 #include <cstdlib>
 
 namespace option {
-    enum class Tag { Some, None };
+    DATA_INITIALIZER_TYPES((Some, T), (None));
+
     template<typename T>
-    class Option {
-    public:
-        // data(Option, (Some, T), (None))
+    struct Option {
+        data(Option, (Some, T), (None));
         T unwrap() {
-            if (this->tag == Tag::Some) return this->Some;
+            if (this->tag == Tag::Some) return this->Some_val;
             exit(1);
         }
         bool is_some() {
@@ -22,6 +22,5 @@ namespace option {
         }
     };
 }
-using enum option::Tag; // Kinda evil, but I don't know how to make match work otherwise
 
 #endif // !OPTION_H_

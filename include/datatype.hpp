@@ -3,8 +3,24 @@
 
 #include "cursed_macros.h"
 
+// FIELD is (TAG, [TYPE])
 
-// FIELD is (TAG, TYPE)
+/******************************************************************************/
+#define _DATA_INITIALIZER_TYPE(TAG, ...)                                      \
+    __VA_OPT__(template<typename CAR(__VA_ARGS__)>)                           \
+    struct TAG {                                                              \
+        __VA_OPT__(const CAR(__VA_ARGS__) TAG##_value;)                       \
+        TAG() = default;                                                      \
+        ~TAG() = default;                                                     \
+        TAG(TAG&&) = delete;                                                  \
+        TAG(const TAG&) = delete;                                             \
+        __VA_OPT__(TAG(const CAR(__VA_ARGS__) value) : TAG##_value(value) {}) \
+    };
+#define DATA_INITIALIZER_TYPE(FIELD) _DATA_INITIALIZER_TYPE FIELD
+/******************************************************************************/
+
+#define DATA_INITIALIZER_TYPES(...) FOREACH(DATA_INITIALIZER_TYPE, __VA_ARGS__)
+
 /******************************************************************************/
 #define _DATA_ENUM(TAG, ...) TAG,
 #define DATA_ENUM(FIELD) _DATA_ENUM FIELD
@@ -17,7 +33,7 @@
 
 /******************************************************************************/
 #define _DATA_CONSTRUCTOR_BODY(TAG, ...) \
-    (TAG<CAR(__VA_ARGS__)> &&TAG) : tag(Tag::TAG) __VA_OPT__(, TAG##_val(TAG.TAG##_value)) {}
+    (TAG __VA_OPT__(<CAR(__VA_ARGS__)>) &&TAG) : tag(Tag::TAG) __VA_OPT__(, TAG##_val(TAG.TAG##_value)) {}
 
 #define DATA_CONSTRUCTOR_BODY(FIELD) _DATA_CONSTRUCTOR_BODY FIELD
 #define DATA_CONSTRUCTOR(TYPENAME) TYPENAME DATA_CONSTRUCTOR_BODY
@@ -83,6 +99,11 @@
     auto ___self = EXPR; \
     switch (___self.tag)
 
+/******************************************************************************/
+#define OF_PATTERN_PREDICATE(...) \
+    __VA_OPT__(if (!(CAR __VA_ARGS__)) goto ___default;)
+/******************************************************************************/
+
 /**
  * @brief Specifies branch of match statement
  * @details Usage:
@@ -95,10 +116,7 @@
     break;}                                                  \
     case decltype(___self)::Tag::TAG:{                       \
         __VA_OPT__(auto CAR __VA_ARGS__ = ___self.TAG##_val; \
-                   _PATTERN_PREDICATE(CDR __VA_ARGS__))
-
-#define _PATTERN_PREDICATE(...) \
-    __VA_OPT__(if (!(CAR __VA_ARGS__)) goto ___default;)
+                   OF_PATTERN_PREDICATE(CDR __VA_ARGS__))
 
 /**
  * @brief default brainch of match statement (kinda like _ in Rust)

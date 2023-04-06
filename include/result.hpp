@@ -2,8 +2,6 @@
 #define RESULT_H_
 
 #include <cstdlib>
-#include <assert.h>
-#include <iostream>
 
 #include "error.hpp"
 #include "option.hpp"
@@ -11,33 +9,7 @@
 #include "datatype.hpp"
 
 namespace result {
-    template<typename T>
-    struct Ok {
-        const T Ok_value;
-
-        Ok() = default;
-        ~Ok() = default;
-
-        Ok(Ok&&) = delete;
-        Ok(const Ok&) = delete;
-
-        Ok(const T &value) : Ok_value(value) {}
-        template <typename... Args>
-        Ok(Args&&... args) : Ok_value(static_cast<Args&&>(args)...) { }
-    };
-
-    template<typename E>
-    struct Err {
-        E Err_value;
-
-        Err() = default;
-        ~Err() = default;
-
-        Err(Err&&) = delete;
-        Err(const Err&) = delete;
-
-        Err(const E &value) : Err_value(value) {}
-    };
+    DATA_INITIALIZER_TYPES((Ok, T), (Err, E));
 
     template<typename T, typename E>
     struct Result {
@@ -61,14 +33,14 @@ namespace result {
             }
             exit(1);
         }
-        // option::Option<T> ok() {
-        //     if (this->is_ok()) return {Some, this->Ok};
-        //     return None;
-        // }
-        // option::Option<E> err() {
-        //     if (this->is_err()) return {Some, this->Err};
-        //     return None;
-        // }
+        option::Option<T> ok() {
+            if (this->is_ok()) return option::Some(this->Ok_val);
+            return option::None();
+        }
+        option::Option<E> err() {
+            if (this->is_err()) return option::Some(this->Err_val);
+            return option::None();
+        }
     };
 }
 
