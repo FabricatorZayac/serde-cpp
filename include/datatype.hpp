@@ -6,15 +6,18 @@
 // FIELD is (TAG, [TYPE])
 
 /******************************************************************************/
-#define _DATA_INITIALIZER_TYPE(TAG, ...)                                      \
-    __VA_OPT__(template<typename CAR(__VA_ARGS__)>)                           \
-    struct TAG {                                                              \
-        __VA_OPT__(const CAR(__VA_ARGS__) TAG##_value;)                       \
-        TAG() = default;                                                      \
-        ~TAG() = default;                                                     \
-        TAG(TAG&&) = delete;                                                  \
-        TAG(const TAG&) = delete;                                             \
-        __VA_OPT__(TAG(const CAR(__VA_ARGS__) value) : TAG##_value(value) {}) \
+#define DATA_INITIALIZER_TYPE_IMPL(TAG, ...)                              \
+    __VA_OPT__(const CAR(__VA_ARGS__) TAG##_value;)                       \
+    TAG() = default;                                                      \
+    ~TAG() = default;                                                     \
+    TAG(TAG&&) = delete;                                                  \
+    TAG(const TAG&) = delete;                                             \
+    __VA_OPT__(TAG(const CAR(__VA_ARGS__) value) : TAG##_value(value) {}) \
+
+#define _DATA_INITIALIZER_TYPE(TAG, ...)             \
+    __VA_OPT__(template<typename CAR(__VA_ARGS__)>)  \
+    struct TAG {                                     \
+        DATA_INITIALIZER_TYPE_IMPL(TAG, __VA_ARGS__) \
     };
 #define DATA_INITIALIZER_TYPE(FIELD) _DATA_INITIALIZER_TYPE FIELD
 /******************************************************************************/
