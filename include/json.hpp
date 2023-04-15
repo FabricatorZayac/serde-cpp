@@ -6,67 +6,70 @@
 
 #include "cursed_macros.h"
 #include "error.hpp"
+#include "option.hpp"
 #include "result.hpp"
 #include "datatype.hpp"
 #include "str.hpp"
-
-using result::Ok;
-using result::Err;
+#include "serde.hpp"
+#include "comma_separated.hpp"
 
 namespace json {
     namespace ser {
+        using result::Ok;
+        using result::Err;
         struct Serializer {
             std::string output;
 
-            using SerializeStruct = Serializer;
-            using Unit = struct {};
+            struct Self {
+                using Ok = void;
+                using SerializeStruct = Serializer;
+            };
+            using SerializeStruct = Self::SerializeStruct::Self;
 
             template<typename T>
             using Result = result::Result<T, error::Error>;
 
-            Result<Unit> serialize(bool &v) {
+            Result<Self::Ok> serialize(bool &v) {
                 this->output += v ? "true" : "false";
-                return Ok(Unit());
+                return Ok();
             }
-            Result<Unit> serialize(int &v) {
+            Result<Self::Ok> serialize(int &v) {
                 this->output += std::to_string(v);
-                return result::Ok(Unit());
+                return Ok();
             }
-            Result<Unit> serialize(const char *v) {
+            Result<Self::Ok> serialize(const char *&v) {
                 this->output += "\"";
                 this->output += v;
                 this->output += "\"";
-                return result::Ok(Unit());
+                return Ok();
             }
             template<typename T>
-            Result<Unit> serialize(T &v) {
+            Result<Self::Ok> serialize(T &v) {
                 v.serialize(*this);
-                return result::Ok(Unit());
+                return Ok();
             }
-            Result<SerializeStruct *> serialize_struct() {
+            Result<Self::SerializeStruct *> serialize_struct(const char *name) {
                 this->output += "{";
-                return result::Ok(this);
+                return Ok(this);
             }
             template<typename T>
-            Result<SerializeStruct *> serialize_field(const char *key, T &value) {
+            Result<SerializeStruct::Ok> serialize_field(const char *key, T &value) {
                 if (output.back() != '{') {
                     this->output += ",";
                 }
                 serialize(key);
                 this->output += ":";
                 serialize(value);
-                return result::Ok(this);
+                return Ok();
             }
-            Result<Unit> end() {
+            Result<SerializeStruct::Ok> end() {
                 this->output += "}";
-                return result::Ok(Unit());
+                return Ok();
             }
         };
     }
     template<typename T>
-    result::Result<std::string, error::Error>
-    // std::string
-    from(T &value) {
+    result::Result<std::string, error::Error> from(T &value) {
         ser::Serializer serializer;
         serializer.serialize(value);
         return result::Ok(serializer.output);
@@ -75,11 +78,14 @@ namespace json {
 
 namespace json {
     namespace de {
+        using result::Ok;
+        using result::Err;
+
         struct Deserializer {
             const char *input;
             Deserializer(const char *in) : input(in) {};
+
             using Error = error::Error;
-            // Result alias
             template<typename T>
             using Result = result::Result<T, Error>;
 
@@ -137,6 +143,82 @@ namespace json {
                 this->input = end + 1;
                 return Ok(res);
             }
+            // Deserializer trait
+            template<typename V>
+            Result<typename V::Value> deserialize_any(V visitor) {
+                switch (TRY(this->peek_char())) {
+                case 't':
+                case 'f':
+                    this->deserialize_bool(visitor);
+                    break;
+                case '"':
+                    this->deserialize_str(visitor);
+                    break;
+                case '0' ... '9':
+                    this->deserialize_ulong_long(visitor);
+                    break;
+                case '-':
+                    this->deserialize_long_long(visitor);
+                    break;
+                }
+            }
+            template<typename V>
+            Result<typename V::Value> deserialize_bool(V visitor) {
+                return visitor.visit_bool(TRY(this->parse_bool()));
+            }
+            template<typename V>
+            Result<typename V::Value> deserialize_short(V visitor) {
+                return visitor.visit_short(TRY(this->parse_signed<short>()));
+            }
+            template<typename V>
+            Result<typename V::Value> deserialize_int(V visitor) {
+                return visitor.visit_int(TRY(this->parse_signed<int>()));
+            }
+            template<typename V>
+            Result<typename V::Value> deserialize_long(V visitor) {
+                return visitor.visit_long(TRY(this->parse_signed<long>()));
+            }
+            template<typename V>
+            Result<typename V::Value> deserialize_long_long(V visitor) {
+                return visitor.visit_long_long(TRY(this->parse_signed<long long>()));
+            }
+            template<typename V>
+            Result<typename V::Value> deserialize_ushort(V visitor) {
+                return visitor.visit_short(TRY(this->parse_unsigned<unsigned short>()));
+            }
+            template<typename V>
+            Result<typename V::Value> deserialize_uint(V visitor) {
+                return visitor.visit_int(TRY(this->parse_unsigned<unsigned int>()));
+            }
+            template<typename V>
+            Result<typename V::Value> deserialize_ulong(V visitor) {
+                return visitor.visit_long(TRY(this->parse_unsigned<unsigned long>()));
+            }
+            template<typename V>
+            Result<typename V::Value> deserialize_ulong_long(V visitor) {
+                return visitor.visit_long_long(TRY(this->parse_unsigned<unsigned long long>()));
+            }
+            template<typename V>
+            Result<typename V::Value> deserialize_str(V visitor) {
+                return visitor.visit_str(TRY(this->parse_string()));
+            }
+            template<typename V>
+            Result<typename V::Value> deserialize_identifier(V visitor) {
+                return this->deserialize_str(visitor);
+            }
+            template<typename V>
+            Result<typename V::Value> deserialize_map(V visitor) {
+                if (TRY(this->next_char()) == '{') {
+                    auto value = visitor.visit_map(CommaSeparated(this));
+                    if (TRY(this->next_char()) == '}') {
+                        return Ok(value);
+                    } else {
+                        return Err(Error("Expected map end"));
+                    }
+                } else {
+                    return Err(Error("Expected map"));
+                }
+            }
         };
     }
     template<typename T>
@@ -146,29 +228,35 @@ namespace json {
     }
 }
 
-namespace json {
-    namespace de {
-        template<typename T>
-        struct Visitor {
+namespace json::de {
+    template<typename T>
+    using Result = result::Result<T, error::Error>;
 
-        };
-    }
+    using serde::de::Visitor;
+
+    struct BoolVisitor : Visitor<bool> {
+        Result<Value> visit_bool(Value value) override {
+            return Ok(value);
+        }
+    };
+    struct LongLongVisitor : Visitor<long long> {
+        Result<Value> visit_long_long(Value value) override {
+            return Ok(value);
+        }
+    };
+    struct StrVisitor : Visitor<str> {
+        Result<Value> visit_str(Value value) {
+            return Ok(value);
+        }
+    };
+    template<typename T>
+    struct StructVisitor : Visitor<T> {
+        using Value = typename Visitor<T>::Value;
+
+        Result<Value> visit_map(Value value) {
+
+        }
+    };
 }
-
-#define _SER_FIELD(field) TRY(ser->serialize_field(#field, field));
-
-/**
- * Specify `Serializer` with `using`
- * @params comma separated field names to serialize
- */
-#define SERIALIZE(...)                                 \
-    struct Unit {};                                    \
-    result::Result<Unit, error::Error>                 \
-    serialize(Serializer &serializer) {                \
-        auto ser = TRY(serializer.serialize_struct()); \
-        FOREACH(_SER_FIELD, __VA_ARGS__);              \
-        TRY(ser->end());                               \
-        return Ok(Unit());                             \
-    }
 
 #endif // JSON_H_
