@@ -96,7 +96,5 @@ int main() {
     parray({1, 2, 3, 4});
     std::cout << checked_div(4, 0).err().unwrap().to_str() << std::endl;
 
-    json::de::StructVisitor<RGB> visitor;
-
     return 0;
 }

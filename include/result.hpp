@@ -6,7 +6,7 @@
 #include "error.hpp"
 #include "option.hpp"
 #include "cursed_macros.h"
-#include "datatype.hpp"
+#include "datatype_macros.hpp"
 
 namespace result {
     DATA_INITIALIZER_TYPES((Ok, T), (Err, E));

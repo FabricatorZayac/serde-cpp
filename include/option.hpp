@@ -1,7 +1,7 @@
 #ifndef OPTION_H_
 #define OPTION_H_
 
-#include "datatype.hpp"
+#include "datatype_macros.hpp"
 #include <cstdlib>
 
 namespace option {
