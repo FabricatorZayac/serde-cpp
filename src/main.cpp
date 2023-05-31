@@ -4,6 +4,7 @@
 #include <string>
 #include <assert.h>
 
+#include "datatype_macros.hpp"
 #include "error.hpp"
 #include "json.hpp"
 #include "option.hpp"
@@ -65,15 +66,6 @@ struct ColoredText {
     SERIALIZE(ColoredText, color, text)
 };
 
-// Example of function taking array
-template<typename T, int N>
-void parray(T const (&arr)[N]) {
-    for (int i = 0; i < N; i++) {
-        std::cout << arr[i] << ' ';
-    }
-    std::cout << std::endl;
-}
-
 result::Result<double, error::Error> checked_div(double a, double b) {
     if (b == 0) return result::Err(error::Error("div by zero"));
     else return result::Ok(a / b);
@@ -83,6 +75,8 @@ int main() {
     RGB color{0xFF, 0x00, 0xAC};
     ColoredText foo{color, "bar"};
 
+    std::cout << json::from(color).unwrap() << std::endl;
+    std::cout << json::from(foo).unwrap() << std::endl;
     assert(json::from(color).unwrap() == R"({"r":255,"g":0,"b":172})");
     assert(json::from(foo).unwrap() == R"({"color":{"r":255,"g":0,"b":172},"text":"bar"})");
 
@@ -93,8 +87,24 @@ int main() {
     assert(Deserializer("-123").parse_signed<int>().unwrap() == -123);
     assert(Deserializer("\"qwerty\"").parse_string().unwrap().equals(str("qwerty", 6)));
 
-    parray({1, 2, 3, 4});
-    std::cout << checked_div(4, 0).err().unwrap().to_str() << std::endl;
+    double a = 5, b = 2;
+    /* std::cin >> a >> b; */
+    match(checked_div(a, b)) {{
+        of(Ok, (x)) {
+            std::cout << "Division result is: " << x << std::endl;
+        }
+        of(Err, (e)) {
+            std::cout << e.to_str() << std::endl;
+        }
+    }}
+    match(checked_div(b, a)) {{
+        of(Ok, (x)) {
+            std::cout << "Division result is: " << x << std::endl;
+        }
+        of(Err, (e)) {
+            std::cout << e.to_str() << std::endl;
+        }
+    }}
 
     return 0;
 }
