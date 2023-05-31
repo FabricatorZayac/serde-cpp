@@ -98,9 +98,8 @@
  *              }}
  * @param   EXPR Expression returning a tagged union
  */
-#define match(EXPR)      \
-    auto ___self = EXPR; \
-    switch (___self.tag)
+#define match(EXPR) \
+    switch (auto ___self = EXPR; ___self.tag)
 
 /******************************************************************************/
 #define OF_PATTERN_PREDICATE(...) \
