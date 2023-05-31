@@ -5,57 +5,66 @@
 #include <assert.h>
 
 #include "datatype_macros.hpp"
-#include "error.hpp"
 #include "json.hpp"
-#include "option.hpp"
-#include "result.hpp"
 #include "serde.hpp"
-#include "str.hpp"
+#include "fst.hpp"
 
 struct RGB {
     int r;
     int g;
     int b;
-    SERIALIZE(RGB, r, g, b)
+    SERIALIZE(RGB, r, g, b);
+    DESERIALIZE(RGB, r, g, b);
 
-    template<typename D> // Deserializer
-    result::Result<RGB, typename D::Error> deserialize(D deserializer) {
-        using namespace result;
-
-        struct FieldImpl {
-            enum class Field { r, g, b, };
-
-            Result<Field, typename D::Error> deserialize(D deserializer) {
-                struct FieldVisitor : serde::de::Visitor<Field> {
-                    using Value = Field;
-
-                    result::Result<Value, error::Error> visit_str(str value) override {
-                        if (value == "r") {
-                            return Ok(Field::r);
-                        }
-                        if (value == "g") {
-                            return Ok(Field::g);
-                        }
-                        if (value == "b") {
-                            return Ok(Field::b);
-                        }
-                        return Err("Unknown field");
-                    }
-                };
-                deserializer.deserialize_identifier(FieldVisitor());
-            }
-        };
-    }
-    private:
+private:
     struct RGBVisitor : serde::de::Visitor<RGB> {
         using Value = RGB;
 
         template<typename V>
-        result::Result<RGB, typename V::Error> visit_map(V map) {
-            using namespace option;
-            Option<decltype(RGB::r)> r = None();
-            Option<decltype(RGB::g)> g = None();
-            Option<decltype(RGB::b)> b = None();
+        fst::result::Result<RGB, typename V::Error> visit_map(V map) {
+            fst::option::Option<decltype(RGB::r)> r = fst::option::None();
+            fst::option::Option<decltype(RGB::g)> g = fst::option::None();
+            fst::option::Option<decltype(RGB::b)> b = fst::option::None();
+            while (auto key = TRY(map.next_key())) {
+                switch (key) {
+                case Field::r:
+                    if (r.is_some()) {
+                        return fst::result::Err("Duplicate field `r`");
+                    }
+                    r = Some(TRY(map.next_value()));
+                    break;
+                case Field::g:
+                    if (g.is_some()) {
+                        return fst::result::Err("Duplicate field `g`");
+                    }
+                    g = Some(TRY(map.next_value()));
+                    break;
+                case Field::b:
+                    if (b.is_some()) {
+                        return fst::result::Err("Duplicate field `b`");
+                    }
+                    b = Some(TRY(map.next_value()));
+                    break;
+                }
+            }
+            auto _r = TRY(r.ok_or_else<fst::error::Error>(
+                        [](){
+                            return fst::error::Error("Missing field `r`");
+                        }));
+            auto _g = TRY(g.ok_or_else<fst::error::Error>(
+                        [](){
+                            return fst::error::Error("Missing field `g`");
+                        }));
+            auto _b = TRY(b.ok_or_else<fst::error::Error>(
+                        [](){
+                            return fst::error::Error("Missing field `b`");
+                        }));
+            return fst::result::Ok(
+                    RGB {
+                        .r = _r,
+                        .g = _g,
+                        .b = _b
+                    });
         }
     };
 };
@@ -66,9 +75,9 @@ struct ColoredText {
     SERIALIZE(ColoredText, color, text)
 };
 
-result::Result<double, error::Error> checked_div(double a, double b) {
-    if (b == 0) return result::Err(error::Error("div by zero"));
-    else return result::Ok(a / b);
+fst::result::Result<double, fst::error::Error> checked_div(double a, double b) {
+    if (b == 0) return fst::result::Err(fst::error::Error("div by zero"));
+    else return fst::result::Ok(a / b);
 }
 
 int main() {
@@ -85,7 +94,11 @@ int main() {
     assert(Deserializer("false").parse_bool().unwrap() == false);
     assert(Deserializer("123").parse_unsigned<unsigned int>().unwrap() == 123);
     assert(Deserializer("-123").parse_signed<int>().unwrap() == -123);
-    assert(Deserializer("\"qwerty\"").parse_string().unwrap().equals(str("qwerty", 6)));
+    assert(Deserializer("\"qwerty\"").parse_string().unwrap() == "qwerty");
+
+    auto des = Deserializer(R"({"r":0,"g":255,"b":123})");
+    RGB col;
+    col.deserialize(des);
 
     double a = 5, b = 2;
     /* std::cin >> a >> b; */
@@ -97,7 +110,10 @@ int main() {
             std::cout << e.to_str() << std::endl;
         }
     }}
-    match(checked_div(b, a)) {{
+
+    fst::Fn<fst::result::Result<double, fst::error::Error>, double, double>
+        auto div = checked_div;
+    match(div(a, b)) {{
         of(Ok, (x)) {
             std::cout << "Division result is: " << x << std::endl;
         }
@@ -105,6 +121,31 @@ int main() {
             std::cout << e.to_str() << std::endl;
         }
     }}
+
+    fst::Fn<int, int, int> auto add = [](int a, int b){ return a + b; };
+    assert(add(4, 7) == 11);
+
+    fst::Index auto arr0 = fst::arr<int, 5>{5, 4, 3, 2, 1};
+    int ar[] = {5, 4, 3, 2, 1};
+    fst::Index auto arr1 = ar;
+    assert(arr0[3] == 2);
+    assert(arr1[2] == 3);
+
+    fst::option::Option opt(fst::option::Some(5));
+    std::cout
+        << opt.ok_or_else<fst::error::Error>(
+                [](){
+                    return fst::error::Error("kek");
+                }).unwrap()
+        << std::endl;
+
+    opt = fst::option::None();
+    std::cout
+        << opt.ok_or_else<fst::error::Error>(
+                [](){
+                    return fst::error::Error("kek");
+                }).unwrap_err().to_str()
+        << std::endl;
 
     return 0;
 }

@@ -78,7 +78,6 @@
 #define _VFUNC(n) _VFUNC_(n)
 #define VFUNC(func, ...) _VFUNC(NUM_ARGS(__VA_ARGS__)) (func, __VA_ARGS__)
 
-
 #define FOREACH(macro ,...) VFUNC(macro, __VA_ARGS__)
 
 #endif  // CURSED_MACROS_H_

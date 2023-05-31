@@ -43,10 +43,11 @@
 /******************************************************************************/
 
 /******************************************************************************/
-#define _DATA_COPY_CONSTRUCTOR(TAG, ...)                             \
-    case Tag::TAG:                                                   \
-    __VA_OPT__(new (&this->TAG) CAR(__VA_ARGS__)(source.TAG##_val);) \
+#define _DATA_COPY_CONSTRUCTOR(TAG, ...)                                   \
+    case Tag::TAG:                                                         \
+    __VA_OPT__(new (&this->TAG##_val) CAR(__VA_ARGS__)(source.TAG##_val);) \
     break;
+
 #define DATA_COPY_CONSTRUCTOR(FIELD) _DATA_COPY_CONSTRUCTOR FIELD
 /******************************************************************************/
 
@@ -55,6 +56,7 @@
     case Tag::TAG:                                   \
     __VA_OPT__(this->TAG##_val.~CAR(__VA_ARGS__)();) \
                break;
+
 #define DATA_DESTRUCTOR(FIELD) _DATA_DESTRUCTOR FIELD
 /******************************************************************************/
 
@@ -67,23 +69,23 @@
  * @param   NAME name of the surrounding struct
  * @param   ... Type definition
  */
-#define data(NAME, ...)                                   \
-    public:                                               \
-    FOREACH(DATA_CONSTRUCTOR(NAME), __VA_ARGS__)          \
-    NAME(const NAME &source) : tag(source.tag) {          \
-        switch (source.tag) {                             \
-            FOREACH(DATA_COPY_CONSTRUCTOR, __VA_ARGS__)   \
-        }                                                 \
-    }                                                     \
-    ~NAME() {                                             \
-        switch (this->tag) {                              \
-            FOREACH(DATA_DESTRUCTOR, __VA_ARGS__)         \
-        }                                                 \
-    }                                                     \
-    enum class Tag {FOREACH(DATA_ENUM, __VA_ARGS__)} tag; \
-    union {                                               \
-        FOREACH(DATA_FIELD, __VA_ARGS__)                  \
-    }
+#define DATA(NAME, ...)            \
+    public:                                             \
+    FOREACH(DATA_CONSTRUCTOR(NAME), __VA_ARGS__)        \
+    NAME(const NAME &source) : tag(source.tag) {        \
+        switch (source.tag) {                           \
+            FOREACH(DATA_COPY_CONSTRUCTOR, __VA_ARGS__) \
+        }                                               \
+    }                                                   \
+    ~NAME() {                                           \
+        switch (this->tag) {                            \
+            FOREACH(DATA_DESTRUCTOR, __VA_ARGS__)       \
+        }                                               \
+    }                                                   \
+    union {                                             \
+        FOREACH(DATA_FIELD, __VA_ARGS__)                \
+    };                                                  \
+    enum class Tag {FOREACH(DATA_ENUM, __VA_ARGS__)} tag
 
 /**
  * @brief   Rust-like match statement (not an expression!)
