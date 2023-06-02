@@ -1,5 +1,5 @@
-#include "json.hpp"
-#include "comma_separated.hpp"
+#include "serde_json/de.hpp"
+#include "serde_json/comma_separated.hpp"
 
 using namespace fst;
 using namespace option;

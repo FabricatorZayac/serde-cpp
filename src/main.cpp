@@ -4,10 +4,7 @@
 #include <string>
 #include <assert.h>
 
-#include "fst/datatype_macros.hpp"
 #include "serde_json/json.hpp"
-#include "serde/serde.hpp"
-#include "fst/fst.hpp"
 
 struct RGB {
     int r;

@@ -1,4 +1,4 @@
-#include "fst.hpp"
+#include "fst/fst.hpp"
 
 namespace fst::error {
     Error::Error() : message(0) {}
