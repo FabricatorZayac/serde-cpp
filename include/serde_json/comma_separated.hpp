@@ -1,8 +1,9 @@
 #ifndef COMMA_SEPARATED_H_
 #define COMMA_SEPARATED_H_
 
-#include "fst.hpp"
+#include "fst/fst.hpp"
 
+// TODO: fix this shit bruh
 namespace json::de {
     using namespace fst;
 
@@ -12,7 +13,7 @@ namespace json::de {
 
         Deserializer &de;
         bool first;
-        CommaSeparated(Deserializer &de) : de(de), first(true) {}
+        CommaSeparated(Deserializer &de);
 
         template<typename T>
         using Result = result::Result<T, error::Error>;

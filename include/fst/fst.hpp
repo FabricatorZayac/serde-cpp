@@ -8,20 +8,23 @@
 #include "datatype_macros.hpp"
 
 namespace fst {
+    using usize = size_t;
+
     template<typename T, typename Ret, typename ...Args>
     concept Fn = requires(T fn, Args...args) {
         { fn(args...) } -> std::same_as<Ret>;
     };
 
     template<typename T>
-    concept Index = requires(T indexable, size_t index) {
+    concept Index = requires(T indexable, usize index) {
         indexable[index];
     };
 
     struct str {
         const char *body;
-        int length;
-        str(const char *body, int length);
+        const usize length;
+        str(const char *body, usize length);
+        str(const str &);
         bool equals(const str &other);
         // Kinda shit but I don't care
         bool equals(const char *other);
@@ -31,10 +34,10 @@ namespace fst {
         }
     };
 
-    template<typename T, size_t N>
+    template<typename T, usize N>
     struct arr {
         T body[N];
-        constexpr T operator[](size_t idx) const {
+        constexpr T operator[](usize idx) const {
             return body[idx];
         }
     };

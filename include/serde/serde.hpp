@@ -1,10 +1,10 @@
 #ifndef SERDE_H_
 #define SERDE_H_
 
-#include "fst.hpp"
+#include "fst/fst.hpp"
 
-
-namespace serde::de {
+namespace serde {
+namespace de {
     using namespace fst;
 
     using result::Err;
@@ -58,6 +58,8 @@ namespace serde::de {
         }
     };
 }
+}
+
 
 #define _SER_FIELD(field) TRY(ser->serialize_field(#field, field));
 

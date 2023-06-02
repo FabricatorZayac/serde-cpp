@@ -1,7 +1,8 @@
-#include "fst.hpp"
+#include "fst/fst.hpp"
 
 namespace fst {
-    str::str(const char *body, int length) : body(body), length(length) {}
+    str::str(const char *body, const usize length) : body(body), length(length) {}
+    str::str(const str &other) : body(other.body), length(other.length) {}
     bool str::equals(const str &other) {
         if (other.length != this->length) return false;
         for (int i; i < this->length; i++) {

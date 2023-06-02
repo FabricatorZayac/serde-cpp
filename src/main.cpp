@@ -4,10 +4,10 @@
 #include <string>
 #include <assert.h>
 
-#include "datatype_macros.hpp"
-#include "json.hpp"
-#include "serde.hpp"
-#include "fst.hpp"
+#include "fst/datatype_macros.hpp"
+#include "serde_json/json.hpp"
+#include "serde/serde.hpp"
+#include "fst/fst.hpp"
 
 struct RGB {
     int r;
@@ -98,7 +98,7 @@ int main() {
 
     auto des = Deserializer(R"({"r":0,"g":255,"b":123})");
     RGB col;
-    col.deserialize(des);
+    /* col.deserialize(des); */
 
     double a = 5, b = 2;
     /* std::cin >> a >> b; */

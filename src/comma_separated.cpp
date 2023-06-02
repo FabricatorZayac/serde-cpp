@@ -6,6 +6,7 @@ using namespace option;
 using namespace result;
 
 namespace json::de {
+    CommaSeparated::CommaSeparated(Deserializer &de) : de(de), first(true) {}
     template<typename K>
     Result<Option<K>> CommaSeparated::next_key_seed(K seed) {
         if (TRY(this->de.peek_char()) == '}') {
@@ -15,7 +16,7 @@ namespace json::de {
             return Err(error::Error("Expected map comma"));
         }
         this->first = false;
-        seed.deserialize(this->de);
+        return seed.deserialize(this->de);
     }
 
     template<typename V>
@@ -23,6 +24,6 @@ namespace json::de {
         if (TRY(this->de.next_char()) != ':') {
             return Err("Expected map column");
         }
-        seed.deserialize(this->de);
+        return seed.deserialize(this->de);
     }
 }

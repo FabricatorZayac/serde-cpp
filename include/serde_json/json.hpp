@@ -4,11 +4,11 @@
 #include <string>
 #include <cstring>
 
-#include "fst.hpp"
-#include "comma_separated.hpp"
-#include "cursed_macros.h"
-#include "datatype_macros.hpp"
-#include "serde.hpp"
+#include "fst/fst.hpp"
+#include "serde_json/comma_separated.hpp"
+#include "fst/cursed_macros.h"
+#include "fst/datatype_macros.hpp"
+#include "serde/serde.hpp"
 
 namespace json::ser {
     using namespace fst;
