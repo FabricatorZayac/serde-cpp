@@ -35,8 +35,6 @@ namespace fst {
     };
 
     struct str {
-        const char *body;
-        const usize length;
         constexpr str() : length(0) {}
         constexpr str(const char *body, const usize length) :
             body(body),
@@ -47,6 +45,7 @@ namespace fst {
         constexpr str(const str &other) :
             body(other.body),
             length(other.length) {}
+        usize len() { return length; }
         bool equals(const str &other) {
             if (other.length != this->length) return false;
             for (usize i = 0; i < this->length; i++) {
@@ -64,18 +63,15 @@ namespace fst {
         bool operator==(const T &other) {
             return this->equals(other);
         }
-        str operator=(str &other) {
-            return str {
-                other.body,
-                other.length,
-            };
-        }
         friend std::ostream &operator<<(std::ostream &out, const str &s) {
             return out.write(s.body, s.length);
         }
         friend std::string &operator+=(std::string &string, const str &self) {
             return string.append(self.body, self.length);
         }
+    private:
+        const char *body;
+        usize length;
     };
 
     template<typename T, usize N>
