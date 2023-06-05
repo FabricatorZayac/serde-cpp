@@ -3,12 +3,21 @@
 
 #include <concepts>
 #include <cstdlib>
+#include <ostream>
+#include <string>
+#include <type_traits>
+#include <cstring>
 
 #include "cursed_macros.h"
 #include "datatype_macros.hpp"
 
 namespace fst {
     using usize = size_t;
+
+    template<typename T>
+    void drop(T &value) {
+        value.~T();
+    }
 
     template<typename T, typename Ret, typename ...Args>
     concept Fn = requires(T fn, Args...args) {
@@ -20,17 +29,52 @@ namespace fst {
         indexable[index];
     };
 
+    template<typename T>
+    concept Display = requires(T t, std::ostream &out) {
+        { out << t } -> std::convertible_to<std::ostream &>;
+    };
+
     struct str {
         const char *body;
         const usize length;
-        str(const char *body, usize length);
-        str(const str &);
-        bool equals(const str &other);
-        // Kinda shit but I don't care
-        bool equals(const char *other);
+        constexpr str() : length(0) {}
+        constexpr str(const char *body, const usize length) :
+            body(body),
+            length(length) {}
+        constexpr str(const char *c_str) :
+            body(c_str),
+            length(std::char_traits<char>::length(c_str)) {}
+        constexpr str(const str &other) :
+            body(other.body),
+            length(other.length) {}
+        bool equals(const str &other) {
+            if (other.length != this->length) return false;
+            for (usize i = 0; i < this->length; i++) {
+                if (this->body[i] != other.body[i]) return false;
+            }
+            return true;
+        }
+        bool equals(const char *other) {
+            for (usize i = 0; i < this->length; i++) {
+                if (this->body[i] != other[i]) return false;
+            }
+            return true;
+        }
         template<typename T>
         bool operator==(const T &other) {
             return this->equals(other);
+        }
+        str operator=(str &other) {
+            return str {
+                other.body,
+                other.length,
+            };
+        }
+        friend std::ostream &operator<<(std::ostream &out, const str &s) {
+            return out.write(s.body, s.length);
+        }
+        friend std::string &operator+=(std::string &string, const str &self) {
+            return string.append(self.body, self.length);
         }
     };
 
@@ -40,16 +84,6 @@ namespace fst {
         constexpr T operator[](usize idx) const {
             return body[idx];
         }
-    };
-
-    namespace error {
-        class Error {
-            const char *message;
-        public:
-            Error();
-            Error(const char *message);
-            const char *to_str();
-        };
     };
 
     namespace option {
@@ -104,10 +138,10 @@ namespace fst {
             using Ok = Ok<void>;
             DATA(Result, (Err, E), (Ok));
             bool is_ok() {
-                return this->tag == Tag::Ok ? true : false;
+                return this->tag == Tag::Ok;
             }
             bool is_err() {
-                return this->tag == Tag::Err ? true : false;
+                return this->tag == Tag::Err;
             }
             void unwrap() {
                 if (this->is_ok()) {
@@ -137,10 +171,10 @@ namespace fst {
                 exit(1);
             }
             bool is_some() {
-                return this->tag == Tag::Some ? true : false;
+                return this->tag == Tag::Some;
             }
             bool is_none() {
-                return this->tag == Tag::None ? true : false;
+                return this->tag == Tag::None;
             }
             template<typename E>
             result::Result<T, E> ok_or_else(Fn<E> auto err) {
@@ -155,6 +189,13 @@ namespace fst {
             }
         };
     };
+
+    namespace error {
+        template<typename T>
+        concept Error = requires(T err) {
+            { err.description() } -> std::same_as<std::string>;
+        };
+    }
 };
 
 // I feel a little guilty using GNU extrensions, but whatever, this is C++ baybe

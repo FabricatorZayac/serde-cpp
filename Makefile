@@ -22,7 +22,9 @@ LDFLAGS     :=
 CFLAGS      := -I$(INCLUDE) -std=c++20
 DEBUGFLAGS  := -O0 -ggdb
 
-.PHONY: all clean run debug
+.PHONY: all clean run debug gdb
+
+all: $(TARGET)
 
 run: all
 	./$(TARGET)
@@ -30,7 +32,8 @@ run: all
 debug: CFLAGS := $(CFLAGS) $(DEBUGFLAGS)
 debug: all
 
-all: $(TARGET)
+gdb: debug
+	gdb $(TARGET)
 
 $(TARGET): $(OBJS) | $(BIN)
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)

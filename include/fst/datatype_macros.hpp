@@ -54,7 +54,7 @@
 /******************************************************************************/
 #define _DATA_DESTRUCTOR(TAG, ...)                   \
     case Tag::TAG:                                   \
-    __VA_OPT__(this->TAG##_val.~CAR(__VA_ARGS__)();) \
+    __VA_OPT__(fst::drop(this->TAG##_val);) \
                break;
 
 #define DATA_DESTRUCTOR(FIELD) _DATA_DESTRUCTOR FIELD
@@ -77,7 +77,7 @@
             FOREACH(DATA_COPY_CONSTRUCTOR, __VA_ARGS__) \
         }                                               \
     }                                                   \
-    ~NAME() {                                           \
+    virtual ~NAME() {                                   \
         switch (this->tag) {                            \
             FOREACH(DATA_DESTRUCTOR, __VA_ARGS__)       \
         }                                               \

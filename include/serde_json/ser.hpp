@@ -4,62 +4,54 @@
 #include <string>
 
 #include "fst/fst.hpp"
+#include "error.hpp"
+#include "serde/serde.hpp"
 
-namespace json::ser {
-    using namespace fst;
-    using result::Ok;
-    using result::Err;
-    using error::Error;
+namespace serde_json::ser {
+    using error::Result;
 
     struct Serializer {
         std::string output;
 
-        struct Self {
-            using Ok = void;
-            using SerializeStruct = Serializer;
-        };
-        using SerializeStruct = Self::SerializeStruct::Self;
+        using Error = error::Error;
 
-        template<typename T>
-        using Result = result::Result<T, Error>;
+        using Ok = void;
+        using SerializeStruct = Serializer;
 
-        Result<Self::Ok> serialize(bool &v) {
-            this->output += v ? "true" : "false";
-            return Ok();
+        Result<Ok> serialize_bool(bool &value) {
+            this->output += value ? "true" : "false";
+            return fst::result::Ok();
         }
-        Result<Self::Ok> serialize(int &v) {
-            this->output += std::to_string(v);
-            return Ok();
+        Result<Ok> serialize_int(int &value) {
+            this->output += std::to_string(value);
+            return fst::result::Ok();
         }
-        Result<Self::Ok> serialize(const char *&v) {
+        Result<Ok> serialize_str(fst::str &value) {
             this->output += "\"";
-            this->output += v;
+            this->output += value;
             this->output += "\"";
-            return Ok();
+            return fst::result::Ok();
         }
-        template<typename T>
-        Result<Self::Ok> serialize(T &v) {
-            v.serialize(*this);
-            return Ok();
-        }
-        Result<Self::SerializeStruct *> serialize_struct(const char *name) {
+        Result<SerializeStruct *> serialize_struct(const char *name) {
             this->output += "{";
-            return Ok(this);
+            return fst::result::Ok(this);
         }
         template<typename T>
-        Result<SerializeStruct::Ok> serialize_field(const char *key, T &value) {
+        Result<SerializeStruct::Ok> serialize_field(fst::str key, T &value) {
             if (output.back() != '{') {
                 this->output += ",";
             }
-            serialize(key);
+            Serialize<fst::str>{}(key, *this);
             this->output += ":";
-            serialize(value);
-            return Ok();
+            Serialize<T>{}(value, *this);
+            return fst::result::Ok();
         }
         Result<SerializeStruct::Ok> end() {
             this->output += "}";
-            return Ok();
+            return fst::result::Ok();
         }
+        template<typename T>
+        using Serialize = serde::ser::Serialize<T, Serializer>;
     };
 }
 
