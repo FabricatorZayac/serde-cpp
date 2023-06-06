@@ -9,17 +9,17 @@
 
 namespace serde_json {
     using error::Result;
-    template<typename T>
+    template<serde::ser::Serializable T>
     Result<std::string> to_string(T &value) {
         ser::Serializer serializer;
-        ser::Serializer::Serialize<T>{}(value, serializer);
+        ser::Serializer::Serialize<T>::serialize(value, serializer);
         return fst::result::Ok(serializer.output);
     }
 
     template<typename T>
     Result<T> from_str(const char *json) {
         de::Deserializer deserializer(json);
-        T t = TRY(de::Deserializer::Deserialize<T>{}(deserializer));
+        T t = TRY(de::Deserializer::Deserialize<T>::deserialize(deserializer));
         if (strlen(deserializer.input) == 0) {
             return fst::result::Ok(t);
         } else {

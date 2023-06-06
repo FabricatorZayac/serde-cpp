@@ -173,14 +173,14 @@ namespace serde_json::de {
                 }
                 this->first = false;
                 return Ok(fst::option::Option<K>(fst::option::Some(TRY(
-                                    Deserialize<K>{}(this->de)))));
+                                    Deserialize<K>::deserialize(this->de)))));
             }
             template<typename V>
             Result<V> next_value_seed(V seed) {
                 if (TRY(this->de.next_char()) != ':') {
                     return Err(Error::ExpectedMapColon());
                 }
-                return Deserialize<V>{}(this->de);
+                return Deserialize<V>::deserialize(this->de);
             }
 
             template<typename K>

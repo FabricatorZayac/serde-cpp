@@ -4,9 +4,7 @@
 #include <string>
 #include <assert.h>
 
-#include "fst/datatype_macros.hpp"
 #include "fst/fst.hpp"
-#include "serde/serde.hpp"
 #include "serde_json/json.hpp"
 
 struct RGB {
@@ -43,7 +41,8 @@ int main() {
         }
     }}
 
-    match(serde_json::from_str<ColoredText>(R"({"color":{"r":5,"g":25,"b":30},"text":"baz"})")) {{
+    match(serde_json::from_str<ColoredText>(
+                R"({"color":{"r":5,"g":25,"b":30},"text":"baz"})")) {{
         of(Ok, (res)) {
             std::cout << "ColoredText "
                 << "{ color: "
