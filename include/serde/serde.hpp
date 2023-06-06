@@ -201,7 +201,7 @@ struct serde::ser::Serialize<NAME, S> {                       \
 #define FIELD_NAME(FIELD) #FIELD,
 
 #define MAP_VISITOR_TEMPORARY_INIT(FIELD) \
-    fst::option::Option<decltype(OUTPUT::FIELD)> FIELD = fst::option::None();
+    fst::option::Option<decltype(Value::FIELD)> FIELD = fst::option::None();
 
 #define MAP_VISITOR_CASE(FIELD)                                         \
     case Field::FIELD:                                                  \
@@ -209,7 +209,7 @@ struct serde::ser::Serialize<NAME, S> {                       \
             return fst::result::Err(V::Error::duplicate_field(#FIELD)); \
         }                                                               \
         FIELD = fst::option::Some(                                      \
-                TRY(map.template next_value<decltype(OUTPUT::FIELD)>()));\
+                TRY(map.template next_value<decltype(Value::FIELD)>()));\
         break;
 
 #define MAP_VISITOR_RETURN(FIELD) \
@@ -220,7 +220,6 @@ struct serde::ser::Serialize<NAME, S> {                       \
 #define DESERIALIZE(TYPE, ...)                                                          \
 template<typename D>                                                                    \
 struct serde::de::Deserialize<TYPE, D> {                                                \
-    using OUTPUT = TYPE;                                                                \
     fst::result::Result<TYPE, typename D::Error>                                        \
     operator()(D &deserializer) {                                                       \
         return deserializer.deserialize_struct(#TYPE, FIELDS, TYPE##Visitor{});         \
