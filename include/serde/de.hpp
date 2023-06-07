@@ -94,6 +94,7 @@ namespace detail::archetypes::de {
     template<typename T, typename E>
     struct Visitor {
         using Value = T;
+
         fst::result::Result<Value, E> visit_bool(bool);
 
         fst::result::Result<Value, E> visit_char(char);
@@ -158,8 +159,44 @@ namespace de {
 
     template<typename D>
     concept Deserializer =
-    requires(D deserializer) {
+    requires(D deserializer,
+             detail::archetypes::de::Visitor<void, typename D::Error> visitor,
+             const char *name,
+             const fst::str fields[]) {
         requires fst::error::Error<typename D::Error>;
+        { deserializer.deserialize_any(visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+
+        { deserializer.deserialize_bool(visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+
+        { deserializer.deserialize_short(visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        { deserializer.deserialize_int(visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        { deserializer.deserialize_long(visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        { deserializer.deserialize_long_long(visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+
+        { deserializer.deserialize_ushort(visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        { deserializer.deserialize_uint(visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        { deserializer.deserialize_ulong(visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        { deserializer.deserialize_ulong_long(visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+
+        { deserializer.deserialize_str(visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        { deserializer.deserialize_identifier(visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+
+        { deserializer.deserialize_map(visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        { deserializer.deserialize_struct(name, fields, visitor) } -> std::same_as<
+        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
     };
 }
 

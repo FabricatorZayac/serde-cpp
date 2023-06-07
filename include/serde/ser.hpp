@@ -129,7 +129,7 @@ namespace ser {
             return serializer.serialize_bool(self);
         }
     };
-    
+
     template<Serializer S>
     struct Serialize<short, S> {
         static fst::result::Result<typename S::Ok, typename S::Error>

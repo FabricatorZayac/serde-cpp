@@ -41,14 +41,14 @@ namespace serde::ser {                                                      \
                 TRY(map.template next_value<decltype(Value::FIELD)>())); \
         break;
 
-#define MAP_VISITOR_RETURN(FIELD)                           \
-    .FIELD = TRY(FIELD.template ok_or_else<typename V::Error>([](){  \
-                    return V::Error::missing_field(#FIELD); \
+#define MAP_VISITOR_RETURN(FIELD)                                   \
+    .FIELD = TRY(FIELD.template ok_or_else<typename V::Error>([](){ \
+                    return V::Error::missing_field(#FIELD);         \
                 })),
 
 #define DESERIALIZE(TYPE, ...)                                                \
 namespace serde::de {                                                         \
-    template<typename D>                                                      \
+    template<serde::de::Deserializer D>                                       \
     struct Deserialize<TYPE, D> {                                             \
         static fst::result::Result<TYPE, typename D::Error>                   \
         deserialize(D &deserializer) {                                        \
@@ -77,7 +77,7 @@ namespace serde::de {                                                         \
         };                                                                    \
         enum class Field { __VA_ARGS__ };                                     \
     };                                                                        \
-    template<typename D>                                                      \
+    template<serde::de::Deserializer D>                                       \
     struct Deserialize<typename Deserialize<TYPE, D>::Field, D> {             \
         using Struct = Deserialize<TYPE, D>;                                  \
         using Field = typename Struct::Field;                                 \
