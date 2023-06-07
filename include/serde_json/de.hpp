@@ -1,6 +1,7 @@
 #include <concepts>
 #include <cstring>
 
+#include "serde/de.hpp"
 #include "serde/serde.hpp"
 #include "fst/fst.hpp"
 #include "serde_json/error.hpp"
@@ -69,6 +70,7 @@ namespace serde_json::de {
             this->input = end + 1;
             return Ok(res);
         }
+
         // Deserializer trait
         template<typename V>
         Result<typename V::Value> deserialize_any(V visitor) {
@@ -96,7 +98,7 @@ namespace serde_json::de {
         Result<typename V::Value> deserialize_short(V visitor) {
             return visitor.visit_short(TRY(this->parse_signed<short>()));
         }
-        template<typename V>
+        template<serde::de::Visitor<Error> V>
         Result<typename V::Value> deserialize_int(V visitor) {
             return visitor.visit_int(TRY(this->parse_signed<int>()));
         }

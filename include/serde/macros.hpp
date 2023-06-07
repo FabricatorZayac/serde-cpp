@@ -1,6 +1,9 @@
 #ifndef SERDE_MACROS_H_
 #define SERDE_MACROS_H_
 
+#include "fst/cursed_macros.h"
+#include "fst/fst.hpp"
+
 #define _SER_FIELD(field) TRY(state->serialize_field(#field, self.field));
 
 #define SERIALIZE(NAME, ...)                                                \
@@ -14,8 +17,7 @@ namespace serde::ser {                                                      \
             auto state =                                                    \
             TRY(serializer.serialize_struct(#NAME, NUM_ARGS(__VA_ARGS__))); \
             FOREACH(_SER_FIELD, __VA_ARGS__);                               \
-            TRY(state->end());                                              \
-            return Ok();                                                    \
+            return state->end();                                            \
         }                                                                   \
     };                                                                      \
 }
@@ -40,7 +42,7 @@ namespace serde::ser {                                                      \
         break;
 
 #define MAP_VISITOR_RETURN(FIELD)                           \
-    .FIELD = TRY(FIELD.ok_or_else<typename V::Error>([](){  \
+    .FIELD = TRY(FIELD.template ok_or_else<typename V::Error>([](){  \
                     return V::Error::missing_field(#FIELD); \
                 })),
 
@@ -55,7 +57,7 @@ namespace serde::de {                                                         \
         struct Visitor {                                                      \
             using Value = TYPE;                                               \
             template<typename V>                                              \
-            fst::result::Result<TYPE, typename V::Error> visit_map(V map) {   \
+            fst::result::Result<Value, typename V::Error> visit_map(V map) {  \
                 FOREACH(MAP_VISITOR_TEMPORARY_INIT, __VA_ARGS__)              \
                 for (auto key = TRY(map.template next_key<Field>());          \
                         key.is_some();                                        \
@@ -81,7 +83,8 @@ namespace serde::de {                                                         \
         using Field = typename Struct::Field;                                 \
         static fst::result::Result<Field, typename D::Error>                  \
         deserialize(D &deserializer) {                                        \
-            struct FieldVisitor {                                             \
+            struct FieldVisitor :                                             \
+                serde::detail::archetypes::de::Visitor<Field, typename D::Error> { \
                 using Value = Field;                                          \
                 fst::result::Result<Value, typename D::Error>                 \
                 visit_str(fst::str value) {                                   \

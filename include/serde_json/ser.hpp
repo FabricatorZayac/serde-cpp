@@ -23,6 +23,13 @@ namespace serde_json::ser {
             return fst::result::Ok();
         }
 
+        Result<Ok> serialize_char(const char &value) {
+            this->output += "\"";
+            this->output += value;
+            this->output += "\"";
+            return fst::result::Ok();
+        }
+
         Result<Ok> serialize_short(const short &value) { return serialize_long_long(value); }
         Result<Ok> serialize_int(const int &value) { return serialize_long_long(value); }
         Result<Ok> serialize_long(const long &value) { return serialize_long_long(value); }
@@ -49,7 +56,7 @@ namespace serde_json::ser {
             return fst::result::Ok(this);
         }
         template<serde::ser::Serializable T>
-        Result<SerializeStruct::Ok>
+        Result<void>
         serialize_field(const fst::str key, const T &value) {
             if (output.back() != '{') {
                 this->output += ",";

@@ -15,43 +15,43 @@ namespace ser {
     };
 }
 
-namespace detail::archetypes {
-    namespace ser {
-        struct Error {
-            std::string description();
-            static Error custom(const char *);
-        };
-        struct SerializeStruct {
-            using Ok = void;
-            using Error = Error;
+namespace detail::archetypes::ser {
+    struct Error {
+        std::string description();
+        static Error custom(const char *);
+    };
+    struct SerializeStruct {
+        using Ok = void;
+        using Error = Error;
 
-            template<typename T>
-            fst::result::Result<Ok, Error>
-            serialize_field(const fst::str, const T &value);
-            
-            fst::result::Result<Ok, Error> end();
-        };
-        struct Serializer {
-            using Ok = void;
-            using Error = Error;
-            using SerializeStruct = SerializeStruct;
+        template<typename T>
+        fst::result::Result<Ok, Error>
+        serialize_field(const fst::str, const T &value);
+        
+        fst::result::Result<Ok, Error> end();
+    };
+    struct Serializer {
+        using Ok = void;
+        using Error = Error;
+        using SerializeStruct = SerializeStruct;
 
-            fst::result::Result<Ok, Error> serialize_bool(const bool &);
+        fst::result::Result<Ok, Error> serialize_bool(const bool &);
 
-            fst::result::Result<Ok, Error> serialize_short(const short &);
-            fst::result::Result<Ok, Error> serialize_int(const int &);
-            fst::result::Result<Ok, Error> serialize_long(const long &);
-            fst::result::Result<Ok, Error> serialize_long_long(const long long &);
+        fst::result::Result<Ok, Error> serialize_char(const char &);
 
-            fst::result::Result<Ok, Error> serialize_float(const float&);
-            fst::result::Result<Ok, Error> serialize_double(const double&);
+        fst::result::Result<Ok, Error> serialize_short(const short &);
+        fst::result::Result<Ok, Error> serialize_int(const int &);
+        fst::result::Result<Ok, Error> serialize_long(const long &);
+        fst::result::Result<Ok, Error> serialize_long_long(const long long &);
 
-            fst::result::Result<Ok, Error> serialize_str(const fst::str &);
-            fst::result::Result<SerializeStruct *, Error>
-            serialize_struct(const fst::str &, const fst::usize);
-        };
-        struct Serializable;
-    }
+        fst::result::Result<Ok, Error> serialize_float(const float&);
+        fst::result::Result<Ok, Error> serialize_double(const double&);
+
+        fst::result::Result<Ok, Error> serialize_str(const fst::str &);
+        fst::result::Result<SerializeStruct *, Error>
+        serialize_struct(const fst::str &, const fst::usize);
+    };
+    struct Serializable;
 }
 
 namespace ser {
@@ -62,15 +62,16 @@ namespace ser {
              const detail::archetypes::ser::Serializable &value) {
         typename S::Ok;
         requires ser::Error<typename S::Error>;
-        { serializer.end() } -> std::same_as<
-        fst::result::Result<typename S::Ok, typename S::Error>>;
         { serializer.serialize_field(key, value) } -> std::same_as<
+        fst::result::Result<void, typename S::Error>>;
+        { serializer.end() } -> std::same_as<
         fst::result::Result<typename S::Ok, typename S::Error>>;
     };
     template<typename S>
     concept Serializer =
     requires(S serializer,
              const bool &Bool,
+             const char &Char,
              const short &Short,
              const int &Int,
              const long &Long,
@@ -81,9 +82,12 @@ namespace ser {
              const fst::str &name,
              fst::usize len) {
         typename S::Ok;
-        typename S::SerializeStruct;
+        requires SerializeStruct<typename S::SerializeStruct>;
         requires Error<typename S::Error>;
         { serializer.serialize_bool(Bool) } -> std::same_as<
+        fst::result::Result<typename S::Ok, typename S::Error>>;
+
+        { serializer.serialize_char(Char) } -> std::same_as<
         fst::result::Result<typename S::Ok, typename S::Error>>;
 
         { serializer.serialize_short(Short) } -> std::same_as<
@@ -117,6 +121,7 @@ namespace ser {
         serialize(const detail::archetypes::ser::Serializable &self, S &serializer);
     };
 
+    // NOTE: impl Serialize for bool where S: Serializer
     template<Serializer S>
     struct Serialize<bool, S> {
         static fst::result::Result<typename S::Ok, typename S::Error>
@@ -181,8 +186,11 @@ namespace ser {
 namespace ser {
     template<typename T>
     concept Serializable =
-    requires(T &self, detail::archetypes::ser::Serializer &serializer) {
-        Serialize<T, detail::archetypes::ser::Serializer>::serialize(self, serializer);
+    requires(const T &self, detail::archetypes::ser::Serializer &serializer) {
+        { Serialize<T, detail::archetypes::ser::Serializer>::serialize(self, serializer) }
+        -> std::same_as<fst::result::Result<
+            typename detail::archetypes::ser::Serializer::Ok,
+            typename detail::archetypes::ser::Serializer::Error>>;
     };
 }
 }

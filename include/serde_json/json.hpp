@@ -8,16 +8,15 @@
 #include <cstring>
 
 namespace serde_json {
-    using error::Result;
     template<serde::ser::Serializable T>
-    Result<std::string> to_string(T &value) {
+    error::Result<std::string> to_string(T &value) {
         ser::Serializer serializer;
         ser::Serializer::Serialize<T>::serialize(value, serializer);
         return fst::result::Ok(serializer.output);
     }
 
     template<typename T>
-    Result<T> from_str(const char *json) {
+    error::Result<T> from_str(const char *json) {
         de::Deserializer deserializer(json);
         T t = TRY(de::Deserializer::Deserialize<T>::deserialize(deserializer));
         if (strlen(deserializer.input) == 0) {
