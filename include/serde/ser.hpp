@@ -112,70 +112,79 @@ namespace ser {
 }
 
 namespace ser {
-    template<typename T, Serializer S>
+    template<typename T>
     struct Serialize;
 
-    template<Serializer S>
-    struct Serialize<detail::archetypes::ser::Serializable, S> {
+    template<>
+    struct Serialize<detail::archetypes::ser::Serializable> {
+        template<Serializer S>
         static fst::result::Result<typename S::Ok, typename S::Error>
         serialize(const detail::archetypes::ser::Serializable &self, S &serializer);
     };
 
     // NOTE: impl Serialize for bool where S: Serializer
-    template<Serializer S>
-    struct Serialize<bool, S> {
+    template<>
+    struct Serialize<bool> {
+        template<Serializer S>
         static fst::result::Result<typename S::Ok, typename S::Error>
         serialize(const bool &self, S &serializer) {
             return serializer.serialize_bool(self);
         }
     };
 
-    template<Serializer S>
-    struct Serialize<short, S> {
+    template<>
+    struct Serialize<short> {
+        template<Serializer S>
         static fst::result::Result<typename S::Ok, typename S::Error>
         serialize(const short &self, S &serializer) {
             return serializer.serialize_int(self);
         }
     };
-    template<Serializer S>
-    struct Serialize<int, S> {
+    template<>
+    struct Serialize<int> {
+        template<Serializer S>
         static fst::result::Result<typename S::Ok, typename S::Error>
         serialize(const int &self, S &serializer) {
             return serializer.serialize_int(self);
         }
     };
-    template<Serializer S>
-    struct Serialize<long, S> {
+    template<>
+    struct Serialize<long> {
+        template<Serializer S>
         static fst::result::Result<typename S::Ok, typename S::Error>
         serialize(const long &self, S &serializer) {
             return serializer.serialize_long(self);
         }
     };
-    template<Serializer S>
-    struct Serialize<long long, S> {
+    template<>
+    struct Serialize<long long> {
+        template<Serializer S>
         static fst::result::Result<typename S::Ok, typename S::Error>
         serialize(const long long &self, S &serializer) {
             return serializer.serialize_long_long(self);
         }
     };
 
-    template<Serializer S>
-    struct Serialize<float, S> {
+    template<>
+    struct Serialize<float> {
+        template<Serializer S>
         static fst::result::Result<typename S::Ok, typename S::Error>
         serialize(const float &self, S &serializer) {
             return serializer.serialize_float(self);
         }
     };
-    template<Serializer S>
-    struct Serialize<double, S> {
+    template<>
+    struct Serialize<double> {
+        template<Serializer S>
         static fst::result::Result<typename S::Ok, typename S::Error>
         serialize(const double &self, S &serializer) {
             return serializer.serialize_double(self);
         }
     };
 
-    template<Serializer S>
-    struct Serialize<fst::str, S> {
+    template<>
+    struct Serialize<fst::str> {
+        template<Serializer S>
         static fst::result::Result<typename S::Ok, typename S::Error>
         serialize(const fst::str &self, S &serializer) {
             return serializer.serialize_str(self);
@@ -187,7 +196,7 @@ namespace ser {
     template<typename T>
     concept Serializable =
     requires(const T &self, detail::archetypes::ser::Serializer &serializer) {
-        { Serialize<T, detail::archetypes::ser::Serializer>::serialize(self, serializer) }
+        { Serialize<T>::serialize(self, serializer) }
         -> std::same_as<fst::result::Result<
             typename detail::archetypes::ser::Serializer::Ok,
             typename detail::archetypes::ser::Serializer::Error>>;

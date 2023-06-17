@@ -76,6 +76,11 @@ namespace de {
         { Self::missing_field(field) } -> std::same_as<Self>;
         { Self::duplicate_field(field) } -> std::same_as<Self>;
     };
+    template<typename A>
+    concept MapAccess =
+    requires(A map) {
+        requires Error<typename A::Error>;
+    };
 }
 
 namespace detail::archetypes::de {
@@ -91,26 +96,32 @@ namespace detail::archetypes::de {
         static Error missing_field(const fst::str);
         static Error duplicate_field(const fst::str);
     };
-    template<typename T, typename E>
+    struct MapAccess {
+        using Error = Error;
+
+        template<typename K>
+        fst::result::Result<fst::option::Option<typename K::Value>, Error>
+        next_key_seed(K);
+    };
+    template<typename T>
     struct Visitor {
         using Value = T;
 
-        fst::result::Result<Value, E> visit_bool(bool);
+        fst::result::Result<Value, Error> visit_bool(bool);
 
-        fst::result::Result<Value, E> visit_char(char);
+        fst::result::Result<Value, Error> visit_char(char);
 
-        fst::result::Result<Value, E> visit_short(short);
-        fst::result::Result<Value, E> visit_int(int);
-        fst::result::Result<Value, E> visit_long(long);
-        fst::result::Result<Value, E> visit_long_long(long long);
+        fst::result::Result<Value, Error> visit_short(short);
+        fst::result::Result<Value, Error> visit_int(int);
+        fst::result::Result<Value, Error> visit_long(long);
+        fst::result::Result<Value, Error> visit_long_long(long long);
 
-        fst::result::Result<Value, E> visit_float(float);
-        fst::result::Result<Value, E> visit_double(double);
+        fst::result::Result<Value, Error> visit_float(float);
+        fst::result::Result<Value, Error> visit_double(double);
 
-        fst::result::Result<Value, E> visit_str(fst::str);
+        fst::result::Result<Value, Error> visit_str(fst::str);
 
-        template<typename A> // NOTE: where A: MapAccess
-        fst::result::Result<Value, E> visit_map(A);
+        fst::result::Result<Value, Error> visit_map(MapAccess);
     };
     struct Deserializer {
 
@@ -124,7 +135,6 @@ namespace de {
     template<typename V, typename E>
     concept Visitor =
     requires(V visitor,
-             E error,
              bool Bool,
              char Char,
              short Short,
@@ -133,9 +143,10 @@ namespace de {
              long long LongLong,
              float Float,
              double Double,
-             fst::str Str) {
-        requires Error<E>;
+             fst::str Str,
+             detail::archetypes::de::MapAccess map) {
         typename V::Value;
+        requires Error<E>;
         { visitor.visit_bool(Bool) } ->
         std::same_as<fst::result::Result<typename V::Value, E>>;
         { visitor.visit_char(Char) } ->
@@ -154,13 +165,14 @@ namespace de {
         std::same_as<fst::result::Result<typename V::Value, E>>;
         { visitor.visit_str(Str) } ->
         std::same_as<fst::result::Result<typename V::Value, E>>;
-        /* { visitor.visit_map(A) } */
+        { visitor.visit_map(map) } ->
+        std::same_as<fst::result::Result<typename V::Value, E>>;
     };
 
     template<typename D>
     concept Deserializer =
     requires(D deserializer,
-             detail::archetypes::de::Visitor<void, typename D::Error> visitor,
+             detail::archetypes::de::Visitor<void> visitor,
              const char *name,
              const fst::str fields[]) {
         requires fst::error::Error<typename D::Error>;
@@ -209,7 +221,7 @@ namespace de {
         static fst::result::Result<int, typename D::Error>
         deserialize(D &deserializer) {
             struct IntVisitor :
-                detail::archetypes::de::Visitor<int, typename D::Error> {
+                detail::archetypes::de::Visitor<int> {
                 using Value = int;
                 fst::result::Result<Value, typename D::Error>
                 visit_int(int value) {
@@ -225,7 +237,7 @@ namespace de {
         static fst::result::Result<fst::str, typename D::Error>
         deserialize(D &deserializer) {
             struct StrVisitor :
-                detail::archetypes::de::Visitor<fst::str, typename D::Error> {
+                detail::archetypes::de::Visitor<fst::str> {
                 using Value = fst::str;
                 fst::result::Result<Value, typename D::Error>
                 visit_str(fst::str value) {

@@ -98,7 +98,7 @@ namespace serde_json::de {
         Result<typename V::Value> deserialize_short(V visitor) {
             return visitor.visit_short(TRY(this->parse_signed<short>()));
         }
-        template<serde::de::Visitor<Error> V>
+        template<typename V>
         Result<typename V::Value> deserialize_int(V visitor) {
             return visitor.visit_int(TRY(this->parse_signed<int>()));
         }
@@ -197,4 +197,5 @@ namespace serde_json::de {
         template<typename T>
         using Deserialize = serde::de::Deserialize<T, Deserializer>;
     };
+    static_assert(serde::de::Deserializer<Deserializer>);
 }

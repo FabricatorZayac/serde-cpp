@@ -11,7 +11,7 @@ namespace serde_json {
     template<serde::ser::Serializable T>
     error::Result<std::string> to_string(T &value) {
         ser::Serializer serializer;
-        ser::Serializer::Serialize<T>::serialize(value, serializer);
+        serde::ser::Serialize<T>::serialize(value, serializer);
         return fst::result::Ok(serializer.output);
     }
 

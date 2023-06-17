@@ -5,6 +5,8 @@
 #include <assert.h>
 
 #include "fst/fst.hpp"
+#include "serde/de.hpp"
+#include "serde_json/error.hpp"
 #include "serde_json/json.hpp"
 
 struct RGB {
@@ -21,6 +23,10 @@ struct ColoredText {
 };
 SERIALIZE(ColoredText, color, text);
 DESERIALIZE(ColoredText, color, text);
+
+/* static_assert(serde::de::Visitor< */
+/*         serde::de::Deserialize<RGB, serde_json::de::Deserializer>::Visitor, */
+/*         serde_json::error::Error>); */
 
 int main() {
     RGB color{0xFF, 0x00, 0xAC};

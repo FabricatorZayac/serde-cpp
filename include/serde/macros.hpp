@@ -8,8 +8,9 @@
 
 #define SERIALIZE(NAME, ...)                                                \
 namespace serde::ser {                                                      \
-    template<Serializer S>                                                  \
-    struct Serialize<NAME, S> {                                             \
+    template<>                                                              \
+    struct Serialize<NAME> {                                                \
+        template<serde::ser::Serializer S>                                  \
         fst::result::Result<typename S::Ok, typename S::Error>              \
         static serialize(const NAME &self, S &serializer) {                 \
             using fst::result::Ok;                                          \
@@ -54,7 +55,7 @@ namespace serde::de {                                                         \
         deserialize(D &deserializer) {                                        \
             return deserializer.deserialize_struct(#TYPE, FIELDS, Visitor{}); \
         };                                                                    \
-        struct Visitor {                                                      \
+        struct Visitor : detail::archetypes::de::Visitor<TYPE> {              \
             using Value = TYPE;                                               \
             template<typename V>                                              \
             fst::result::Result<Value, typename V::Error> visit_map(V map) {  \
@@ -83,8 +84,7 @@ namespace serde::de {                                                         \
         using Field = typename Struct::Field;                                 \
         static fst::result::Result<Field, typename D::Error>                  \
         deserialize(D &deserializer) {                                        \
-            struct FieldVisitor :                                             \
-                serde::detail::archetypes::de::Visitor<Field, typename D::Error> { \
+            struct FieldVisitor : detail::archetypes::de::Visitor<Field> {    \
                 using Value = Field;                                          \
                 fst::result::Result<Value, typename D::Error>                 \
                 visit_str(fst::str value) {                                   \

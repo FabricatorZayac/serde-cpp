@@ -57,21 +57,19 @@ namespace serde_json::ser {
         }
         template<serde::ser::Serializable T>
         Result<void>
-        serialize_field(const fst::str key, const T &value) {
+        serialize_field(const fst::str &key, const T &value) {
             if (output.back() != '{') {
                 this->output += ",";
             }
-            Serialize<fst::str>::serialize(key, *this);
+            serde::ser::Serialize<fst::str>::serialize(key, *this);
             this->output += ":";
-            Serialize<T>::serialize(value, *this);
+            serde::ser::Serialize<T>::serialize(value, *this);
             return fst::result::Ok();
         }
         Result<SerializeStruct::Ok> end() {
             this->output += "}";
             return fst::result::Ok();
         }
-        template<serde::ser::Serializable T>
-        using Serialize = serde::ser::Serialize<T, Serializer>;
     };
     static_assert(serde::ser::Serializer<Serializer>);
     static_assert(serde::ser::SerializeStruct<Serializer>);
