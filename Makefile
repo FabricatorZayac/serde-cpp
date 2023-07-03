@@ -1,51 +1,55 @@
 ##
-# Project Title
+# C++ Header-only library Makefile
 #
 # @file
 # @version 0.1
 
-CC          := clang++
-RMDIR       := rm -rf
-RM          := rm -f
-MKDIR       := mkdir
+CXX          := clang++
+CXX_STANDARD := c++20
+RM           := rm -f
+RMDIR        := rm -rf
+MKDIR        := mkdir
+DEBUGGER     := lldb
 
-SRC         := ./src
-OBJ         := ./obj
-BIN         := ./bin
-INCLUDE     := ./include
+INCLUDE      := include
 
-SRCS        := $(wildcard $(SRC)/*.cpp)
-OBJS        := $(patsubst $(SRC)/%.cpp, $(OBJ)/%.o, $(SRCS))
-TARGET      := $(BIN)/appname
+TESTDIR      := test
+TESTSRC      := $(TESTDIR)/src
+TESTOBJ      := $(TESTDIR)/obj
+TESTBIN      := $(TESTDIR)/bin
 
-LDFLAGS     :=
-CFLAGS      := -I$(INCLUDE) -std=c++20
-DEBUGFLAGS  := -O0 -ggdb
+TESTSRCS     := $(shell find $(TESTSRC) -name "*.cpp")
+TESTOBJS     := $(patsubst $(TESTSRC)/%.cpp, $(TESTOBJ)/%.o, $(TESTSRCS))
+TESTS        := $(patsubst $(TESTOBJ)/%.o, $(TESTBIN)/%, $(TESTOBJS))
 
-.PHONY: all clean run debug gdb
+LDFLAGS      :=
+CFLAGS       := -I$(INCLUDE) -std=$(CXX_STANDARD) -Wall -Wextra
+DEBUGFLAGS   := -O0 -ggdb
 
-all: $(TARGET)
+define execute
+$(1)
 
-run: all
-	./$(TARGET)
+endef
+
+.PHONY: clean debug lldb test
+.SECONDARY: $(TESTOBJS)
+
+test: $(TESTS)
+	$(foreach x, $(TESTS), $(call execute, ./$(x)))
 
 debug: CFLAGS := $(CFLAGS) $(DEBUGFLAGS)
-debug: all
+debug: $(TESTS)
 
-gdb: debug
-	gdb $(TARGET)
+$(TESTBIN)/%: $(TESTOBJ)/%.o | $(TESTBIN)
+	$(CXX) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
-$(TARGET): $(OBJS) | $(BIN)
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+$(TESTOBJ)/%.o: $(TESTSRC)/%.cpp $(TESTOBJ)
+	$(CXX) $(CFLAGS) -c $< -o $@
 
-$(OBJ)/%.o: $(SRC)/%.cpp | $(OBJ)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(OBJ) $(BIN):
+$(TESTOBJ) $(TESTBIN):
 	$(MKDIR) $@
 
 clean:
-	$(RMDIR) $(BIN) $(OBJ)
-
+	$(RMDIR) $(TESTDIR)/bin $(TESTDIR)/obj
 
 # end

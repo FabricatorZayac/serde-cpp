@@ -175,14 +175,14 @@ namespace serde_json::de {
                 }
                 this->first = false;
                 return Ok(fst::option::Option<K>(fst::option::Some(TRY(
-                                    Deserialize<K>::deserialize(this->de)))));
+                                    serde::de::Deserialize<K>::deserialize(this->de)))));
             }
             template<typename V>
             Result<V> next_value_seed(V seed) {
                 if (TRY(this->de.next_char()) != ':') {
                     return Err(Error::ExpectedMapColon());
                 }
-                return Deserialize<V>::deserialize(this->de);
+                return serde::de::Deserialize<V>::deserialize(this->de);
             }
 
             template<typename K>
@@ -194,8 +194,6 @@ namespace serde_json::de {
                 return next_value_seed(V());
             }
         };
-        template<typename T>
-        using Deserialize = serde::de::Deserialize<T, Deserializer>;
     };
     static_assert(serde::de::Deserializer<Deserializer>);
 }

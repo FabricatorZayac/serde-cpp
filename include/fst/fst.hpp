@@ -24,16 +24,6 @@ namespace fst {
         { fn(args...) } -> std::same_as<Ret>;
     };
 
-    template<typename T>
-    concept Index = requires(T indexable, usize index) {
-        indexable[index];
-    };
-
-    template<typename T>
-    concept Display = requires(T t, std::ostream &out) {
-        { out << t } -> std::convertible_to<std::ostream &>;
-    };
-
     struct str {
         constexpr str() : length(0) {}
         constexpr str(const char *body, const usize length) :
@@ -72,14 +62,6 @@ namespace fst {
     private:
         const char *body;
         usize length;
-    };
-
-    template<typename T, usize N>
-    struct arr {
-        T body[N];
-        constexpr T operator[](usize idx) const {
-            return body[idx];
-        }
     };
 
     namespace option {
@@ -201,5 +183,13 @@ namespace fst {
         if (___temp.is_err()) return fst::result::Err(___temp.unwrap_err()); \
         ___temp.unwrap();                                                    \
     })
+
+#define _DEBUG_FIELD(x) << ", " << #x << ": " << self.x
+
+#define DEBUG_OSTREAM(T, FIRST, ...) \
+    friend std::ostream &operator<<(std::ostream &out, T &self) { \
+        return out << #T << " { " << #FIRST << ": " << self.FIRST \
+        FOREACH(_DEBUG_FIELD, __VA_ARGS__) << " }";               \
+    }
 
 #endif // !FST_H_

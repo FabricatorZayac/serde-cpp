@@ -20,9 +20,8 @@
         DATA_INITIALIZER_TYPE_IMPL(TAG, __VA_ARGS__) \
     };
 #define DATA_INITIALIZER_TYPE(FIELD) _DATA_INITIALIZER_TYPE FIELD
-/******************************************************************************/
-
 #define DATA_INITIALIZER_TYPES(...) FOREACH(DATA_INITIALIZER_TYPE, __VA_ARGS__)
+/******************************************************************************/
 
 /******************************************************************************/
 #define _DATA_ENUM(TAG, ...) TAG,

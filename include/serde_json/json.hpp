@@ -15,10 +15,11 @@ namespace serde_json {
         return fst::result::Ok(serializer.output);
     }
 
+    /* template<serde::de::Deserializable T> */
     template<typename T>
     error::Result<T> from_str(const char *json) {
         de::Deserializer deserializer(json);
-        T t = TRY(de::Deserializer::Deserialize<T>::deserialize(deserializer));
+        T t = TRY(serde::de::Deserialize<T>::deserialize(deserializer));
         if (strlen(deserializer.input) == 0) {
             return fst::result::Ok(t);
         } else {

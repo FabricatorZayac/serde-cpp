@@ -193,13 +193,11 @@ namespace ser {
 }
 
 namespace ser {
-    template<typename T>
+    template<typename T, typename S = detail::archetypes::ser::Serializer>
     concept Serializable =
-    requires(const T &self, detail::archetypes::ser::Serializer &serializer) {
+    requires(const T &self, S &serializer) {
         { Serialize<T>::serialize(self, serializer) }
-        -> std::same_as<fst::result::Result<
-            typename detail::archetypes::ser::Serializer::Ok,
-            typename detail::archetypes::ser::Serializer::Error>>;
+        -> std::same_as<fst::result::Result<typename S::Ok, typename S::Error>>;
     };
 }
 }

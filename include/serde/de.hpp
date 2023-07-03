@@ -124,14 +124,13 @@ namespace detail::archetypes::de {
         fst::result::Result<Value, Error> visit_map(MapAccess);
     };
     struct Deserializer {
-
+        using Error = Error;
     };
-    struct Deserializable {
-
-    };
+    struct Deserializable;
 }
 
 namespace de {
+    // NOTE: doesn't work
     template<typename V, typename E>
     concept Visitor =
     requires(V visitor,
@@ -213,11 +212,12 @@ namespace de {
 }
 
 namespace de {
-    template<typename T, Deserializer D>
+    template<typename T>
     struct Deserialize;
 
-    template<Deserializer D>
-    struct Deserialize<int, D> {
+    template<>
+    struct Deserialize<int> {
+        template<Deserializer D>
         static fst::result::Result<int, typename D::Error>
         deserialize(D &deserializer) {
             struct IntVisitor :
@@ -232,8 +232,9 @@ namespace de {
         }
     };
 
-    template<Deserializer D>
-    struct Deserialize<fst::str, D> {
+    template<>
+    struct Deserialize<fst::str> {
+        template<Deserializer D>
         static fst::result::Result<fst::str, typename D::Error>
         deserialize(D &deserializer) {
             struct StrVisitor :
@@ -247,6 +248,15 @@ namespace de {
             return deserializer.deserialize_str(StrVisitor{});
         }
     };
+}
+
+namespace de {
+    template<typename T, typename D = detail::archetypes::de::Deserializer>
+    concept Deserializable = requires(D deserializer) {
+        { Deserialize<T>::deserialize(deserializer) }
+        -> std::same_as<fst::result::Result<T, typename D::Error>>;
+    };
+    /* static_assert(Deserializer<detail::archetypes::de::Deserializer>); */
 }
 }
 

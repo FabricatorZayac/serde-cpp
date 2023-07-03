@@ -49,14 +49,14 @@ namespace serde::ser {                                                      \
 
 #define DESERIALIZE(TYPE, ...)                                                \
 namespace serde::de {                                                         \
-    template<serde::de::Deserializer D>                                       \
-    struct Deserialize<TYPE, D> {                                             \
+    template<>                                                                \
+    struct Deserialize<TYPE> {                                                \
+        template<serde::de::Deserializer D>                                   \
         static fst::result::Result<TYPE, typename D::Error>                   \
         deserialize(D &deserializer) {                                        \
             return deserializer.deserialize_struct(#TYPE, FIELDS, Visitor{}); \
         };                                                                    \
         struct Visitor : detail::archetypes::de::Visitor<TYPE> {              \
-            using Value = TYPE;                                               \
             template<typename V>                                              \
             fst::result::Result<Value, typename V::Error> visit_map(V map) {  \
                 FOREACH(MAP_VISITOR_TEMPORARY_INIT, __VA_ARGS__)              \
@@ -78,19 +78,18 @@ namespace serde::de {                                                         \
         };                                                                    \
         enum class Field { __VA_ARGS__ };                                     \
     };                                                                        \
-    template<serde::de::Deserializer D>                                       \
-    struct Deserialize<typename Deserialize<TYPE, D>::Field, D> {             \
-        using Struct = Deserialize<TYPE, D>;                                  \
-        using Field = typename Struct::Field;                                 \
+    template<>                                                                \
+    struct Deserialize<typename Deserialize<TYPE>::Field> {                   \
+        using Field = typename Deserialize<TYPE>::Field;                      \
+        template<serde::de::Deserializer D>                                   \
         static fst::result::Result<Field, typename D::Error>                  \
         deserialize(D &deserializer) {                                        \
             struct FieldVisitor : detail::archetypes::de::Visitor<Field> {    \
-                using Value = Field;                                          \
                 fst::result::Result<Value, typename D::Error>                 \
                 visit_str(fst::str value) {                                   \
                     FOREACH(FIELD_VISITOR, __VA_ARGS__)                       \
-                    return fst::result::Err(                                  \
-                            D::Error::unknown_field(value, Struct::FIELDS));  \
+                    return fst::result::Err(D::Error::unknown_field(          \
+                                value, Deserialize<TYPE>::FIELDS));           \
                 }                                                             \
             };                                                                \
             return deserializer.deserialize_identifier(FieldVisitor());       \
