@@ -1,0 +1,10 @@
+[meta]
+language = "cpp"
+type = "hlib"
+build = "make"
+
+[package]
+name = "serde-cpp"
+
+[dependencies]
+ftl = "https://github.com/FabricatorZayac/ftl"
