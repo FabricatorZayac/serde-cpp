@@ -1,4 +1,5 @@
 /compile_commands.json
-/.cache/
-/obj/
-/bin/
+/.cache
+/test/obj
+/test/bin
+
