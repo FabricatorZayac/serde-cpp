@@ -1,9 +1,7 @@
 [meta]
 language = "cpp"
-type = "hlib"
+type = "source-lib"
 build = "make"
-
-[package]
 name = "serde-cpp"
 
 [dependencies]

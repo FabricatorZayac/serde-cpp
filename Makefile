@@ -31,8 +31,10 @@ $(1)
 
 endef
 
-.PHONY: clean debug lldb test
+.PHONY: clean debug lldb test all
 .SECONDARY: $(TESTOBJS)
+
+all:
 
 test: $(TESTS)
 	$(foreach x, $(TESTS), $(call execute, ./$(x)))
