@@ -11,10 +11,10 @@ namespace serde::ser {                                                      \
     template<>                                                              \
     struct Serialize<NAME> {                                                \
         template<serde::ser::Serializer S>                                  \
-        fst::result::Result<typename S::Ok, typename S::Error>              \
+        ftl::Result<typename S::Ok, typename S::Error>              \
         static serialize(const NAME &self, S &serializer) {                 \
-            using fst::result::Ok;                                          \
-            using fst::result::Err;                                         \
+            using ftl::Ok;                                          \
+            using ftl::Err;                                         \
             auto state =                                                    \
             TRY(serializer.serialize_struct(#NAME, NUM_ARGS(__VA_ARGS__))); \
             FOREACH(_SER_FIELD, __VA_ARGS__);                               \
@@ -25,25 +25,25 @@ namespace serde::ser {                                                      \
 
 #define FIELD_VISITOR(FIELD)                  \
     if (value == #FIELD) {                    \
-        return fst::result::Ok(Field::FIELD); \
+        return ftl::Ok(Field::FIELD); \
     }
 
 #define FIELD_NAME(FIELD) #FIELD,
 
 #define MAP_VISITOR_TEMPORARY_INIT(FIELD) \
-    fst::option::Option<decltype(Value::FIELD)> FIELD = fst::option::None();
+    ftl::Option<decltype(Value::FIELD)> FIELD = ftl::None();
 
 #define MAP_VISITOR_CASE(FIELD)                                          \
     case Field::FIELD:                                                   \
         if (FIELD.is_some()) {                                           \
-            return fst::result::Err(V::Error::duplicate_field(#FIELD));  \
+            return ftl::Err(V::Error::duplicate_field(#FIELD));  \
         }                                                                \
-        FIELD = fst::option::Some(                                       \
+        FIELD = ftl::Some(                                       \
                 TRY(map.template next_value<decltype(Value::FIELD)>())); \
         break;
 
 #define MAP_VISITOR_RETURN(FIELD)                                   \
-    .FIELD = TRY(FIELD.template ok_or_else<typename V::Error>([](){ \
+    .FIELD = TRY(FIELD.ok_or_else([](){ \
                     return V::Error::missing_field(#FIELD);         \
                 })),
 
@@ -52,13 +52,14 @@ namespace serde::de {                                                         \
     template<>                                                                \
     struct Deserialize<TYPE> {                                                \
         template<serde::de::Deserializer D>                                   \
-        static fst::result::Result<TYPE, typename D::Error>                   \
+        static ftl::Result<TYPE, typename D::Error>                   \
         deserialize(D &deserializer) {                                        \
             return deserializer.deserialize_struct(#TYPE, FIELDS, Visitor{}); \
         };                                                                    \
-        struct Visitor : detail::archetypes::de::Visitor<TYPE> {              \
+        struct Visitor {              \
+            using Value = TYPE; \
             template<typename V>                                              \
-            fst::result::Result<Value, typename V::Error> visit_map(V map) {  \
+            ftl::Result<Value, typename V::Error> visit_map(V map) {  \
                 FOREACH(MAP_VISITOR_TEMPORARY_INIT, __VA_ARGS__)              \
                 for (auto key = TRY(map.template next_key<Field>());          \
                         key.is_some();                                        \
@@ -67,7 +68,7 @@ namespace serde::de {                                                         \
                         FOREACH(MAP_VISITOR_CASE, __VA_ARGS__)                \
                     }                                                         \
                 }                                                             \
-                return fst::result::Ok(                                       \
+                return ftl::Ok(                                       \
                         TYPE {                                                \
                             FOREACH(MAP_VISITOR_RETURN, __VA_ARGS__)          \
                         });                                                   \
@@ -82,13 +83,13 @@ namespace serde::de {                                                         \
     struct Deserialize<typename Deserialize<TYPE>::Field> {                   \
         using Field = typename Deserialize<TYPE>::Field;                      \
         template<serde::de::Deserializer D>                                   \
-        static fst::result::Result<Field, typename D::Error>                  \
+        static ftl::Result<Field, typename D::Error>                  \
         deserialize(D &deserializer) {                                        \
             struct FieldVisitor : detail::archetypes::de::Visitor<Field> {    \
-                fst::result::Result<Value, typename D::Error>                 \
+                ftl::Result<Value, typename D::Error>                 \
                 visit_str(fst::str value) {                                   \
                     FOREACH(FIELD_VISITOR, __VA_ARGS__)                       \
-                    return fst::result::Err(D::Error::unknown_field(          \
+                    return ftl::Err(D::Error::unknown_field(          \
                                 value, Deserialize<TYPE>::FIELDS));           \
                 }                                                             \
             };                                                                \

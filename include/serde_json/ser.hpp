@@ -20,14 +20,14 @@ namespace serde_json::ser {
 
         Result<Ok> serialize_bool(const bool &value) {
             this->output += value ? "true" : "false";
-            return fst::result::Ok();
+            return ftl::Ok();
         }
 
         Result<Ok> serialize_char(const char &value) {
             this->output += "\"";
             this->output += value;
             this->output += "\"";
-            return fst::result::Ok();
+            return ftl::Ok();
         }
 
         Result<Ok> serialize_short(const short &value) { return serialize_long_long(value); }
@@ -35,25 +35,27 @@ namespace serde_json::ser {
         Result<Ok> serialize_long(const long &value) { return serialize_long_long(value); }
         Result<Ok> serialize_long_long(const long long &value) {
             this->output += std::to_string(value);
-            return fst::result::Ok();
+            return ftl::Ok();
         }
 
         Result<Ok> serialize_float(const float &value) { return serialize_double(value); }
         Result<Ok> serialize_double(const double &value) {
             this->output += std::to_string(value);
-            return fst::result::Ok();
+            return ftl::Ok();
         }
 
         Result<Ok> serialize_str(const fst::str &value) {
             this->output += "\"";
             this->output += value;
             this->output += "\"";
-            return fst::result::Ok();
+            return ftl::Ok();
         }
         Result<SerializeStruct *>
-        serialize_struct(const fst::str &_name, const fst::usize _len) {
+        serialize_struct(const fst::str &name, const fst::usize len) {
+            (void)name;
+            (void)len;
             this->output += "{";
-            return fst::result::Ok(this);
+            return ftl::Ok(this);
         }
         template<serde::ser::Serializable T>
         Result<void>
@@ -61,14 +63,14 @@ namespace serde_json::ser {
             if (output.back() != '{') {
                 this->output += ",";
             }
-            serde::ser::Serialize<fst::str>::serialize(key, *this);
+            serde::ser::Serialize<fst::str>::serialize(key, *this).unwrap();
             this->output += ":";
-            serde::ser::Serialize<T>::serialize(value, *this);
-            return fst::result::Ok();
+            serde::ser::Serialize<T>::serialize(value, *this).unwrap();
+            return ftl::Ok();
         }
         Result<SerializeStruct::Ok> end() {
             this->output += "}";
-            return fst::result::Ok();
+            return ftl::Ok();
         }
     };
     static_assert(serde::ser::Serializer<Serializer>);

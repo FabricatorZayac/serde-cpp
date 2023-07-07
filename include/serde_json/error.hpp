@@ -6,6 +6,7 @@
 #include "serde/serde.hpp"
 #include <concepts>
 #include <sstream>
+#include <ftl.hpp>
 
 #define TAG_CONSTRUCTOR(TAG) \
     static Error TAG() { return Tag::TAG; }
@@ -111,14 +112,14 @@ namespace serde_json::error {
             return msg.str().c_str();
         }
     private:
-        Error(const char *msg) : msg(msg), tag(Tag::Message) {};
+        Error(const char *msg) : tag(Tag::Message), msg(msg) {};
         Error(Tag tag) : tag(tag) {}
         std::string msg;
     };
     static_assert(serde::de::Error<Error>);
 
     template<typename T>
-    using Result = fst::result::Result<T, Error>;
+    using Result = ftl::Result<T, Error>;
 }
 
 #endif // !JSON_ERROR_H_

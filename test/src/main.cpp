@@ -9,6 +9,8 @@
 #include "serde_json/error.hpp"
 #include "serde_json/json.hpp"
 
+#include <ftl.hpp>
+
 struct RGB {
     int r;
     int g;
@@ -37,24 +39,35 @@ int main() {
     std::cout << serde_json::to_string(color).unwrap() << std::endl;
     std::cout << serde_json::to_string(foo).unwrap() << std::endl;
 
-    match(serde_json::from_str<RGB>(R"({"r":0,"g":255,"b":123})")) {{
-        of(Ok, (res)) {
-            std::cout << res << std::endl;
-        }
-        of(Err, (err)) {
-            std::cout << "Error: " << err.description() << std::endl;
-        }
-    }}
+    switch (auto ___self =
+                serde_json ::from_str<RGB>(R"({"r":0,"g":255,"b":123})");
+            ___self.tag) {
+      { break; }
+    case decltype(___self)::Tag ::Ok: {
+      auto res = ___self.unwrap();
+      { std::cout << res << std::endl; }
+      break;
+    }
+    case decltype(___self)::Tag ::Err: {
+      auto err = ___self.unwrap_err();
+      { std::cout << "Error: " << err.description() << std::endl; }
+    }
+    }
 
-    match(serde_json::from_str<ColoredText>(
-                R"({"color":{"r":5,"g":25,"b":30},"text":"baz"})")) {{
-        of(Ok, (res)) {
-            std::cout << res << std::endl;
-        }
-        of(Err, (err)) {
-            std::cout << "Error: " << err.description() << std::endl;
-        }
-    }}
+    switch (auto ___self = serde_json ::from_str<ColoredText>(
+                R"({"color":{"r":5,"g":25,"b":30},"text":"baz"})");
+            ___self.tag) {
+      { break; }
+    case decltype(___self)::Tag ::Ok: {
+      auto res = ___self.unwrap();
+      { std::cout << res << std::endl; }
+      break;
+    }
+    case decltype(___self)::Tag ::Err: {
+      auto err = ___self.unwrap_err();
+      { std::cout << "Error: " << err.description() << std::endl; }
+    }
+    }
 
     return 0;
 }

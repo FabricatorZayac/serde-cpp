@@ -11,8 +11,8 @@ namespace serde_json {
     template<serde::ser::Serializable T>
     error::Result<std::string> to_string(T &value) {
         ser::Serializer serializer;
-        serde::ser::Serialize<T>::serialize(value, serializer);
-        return fst::result::Ok(serializer.output);
+        serde::ser::Serialize<T>::serialize(value, serializer).unwrap();
+        return ftl::Ok(serializer.output);
     }
 
     /* template<serde::de::Deserializable T> */
@@ -21,9 +21,9 @@ namespace serde_json {
         de::Deserializer deserializer(json);
         T t = TRY(serde::de::Deserialize<T>::deserialize(deserializer));
         if (strlen(deserializer.input) == 0) {
-            return fst::result::Ok(t);
+            return ftl::Ok(t);
         } else {
-            return fst::result::Err(error::Error::TrailingCharacters());
+            return ftl::Err(error::Error::TrailingCharacters());
         }
     }
 }

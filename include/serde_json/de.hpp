@@ -6,9 +6,9 @@
 #include "fst/fst.hpp"
 #include "serde_json/error.hpp"
 
+#include <ftl.hpp>
+
 namespace serde_json::de {
-    using fst::result::Ok;
-    using fst::result::Err;
     using error::Result;
 
     struct Deserializer {
@@ -19,40 +19,48 @@ namespace serde_json::de {
         // Parsing
         Result<char> peek_char() {
             if (*this->input == '\0') {
-                return Err(Error::Eof());
+                return ftl::Err(Error::Eof());
             } else {
-                return Ok(*this->input);
+                return ftl::Ok(*this->input);
             }
         }
         Result<char> next_char() {
             char ch = TRY(this->peek_char());
             this->input++;
-            return Ok(ch);
+            return ftl::Ok(ch);
         }
         Result<bool> parse_bool() {
             if (strncmp(this->input, "true", 4) == 0) {
                 this->input += strlen("true");
-                return Ok(true);
+                return ftl::Ok(true);
             } else if (strncmp(this->input, "false", 5) == 0) {
-                return Ok(false);
+                return ftl::Ok(false);
             }
-            return Err(Error(Error::ExpectedBoolean()));
+            return ftl::Err(Error(Error::ExpectedBoolean()));
         }
         template<typename T>
         Result<T> parse_unsigned() {
             char ch = TRY(this->next_char());
             if (ch < '0' || ch > '9')
-                return Err(Error::ExpectedInteger());
+                return ftl::Err(Error::ExpectedInteger());
             T res = ch - '0';
             while (true) {
-                match(this->peek_char()) {{
-                    of(Ok, (ch, (ch >= '0' && ch <= '9'))) {
+                // TODO: refactor this and remove the stupid macros
+                switch (auto ___self = this->peek_char(); ___self.tag) {
+                case decltype(___self)::Tag ::Ok: {
+                    auto ch = ___self.unwrap();
+                    if (!(ch >= '0' && ch <= '9')) goto ___default;
+                    {
                         this->input++;
                         res *= 10;
                         res += ch - '0';
                     }
-                    of_default { return Ok(res); }
-                }}
+                    break;
+                }
+                default: {
+                    ___default : { return ftl::Ok(res); }
+                }
+                }
             }
         }
         template<typename T>
@@ -60,15 +68,15 @@ namespace serde_json::de {
             bool neg = TRY(this->peek_char()) == '-';
             if (neg) this->input++;
             T res = TRY(this->parse_unsigned<T>());
-            return Ok(neg ? -res : res);
+            return ftl::Ok(neg ? -res : res);
         }
         Result<fst::str> parse_string() {
-            if (TRY(this->next_char()) != '"') return Err(Error::ExpectedString());
+            if (TRY(this->next_char()) != '"') return ftl::Err(Error::ExpectedString());
             const char *end = strchr(this->input, '"');
-            if (end == NULL) return Err(Error::Eof());
+            if (end == NULL) return ftl::Err(Error::Eof());
             fst::str res(this->input, end - this->input);
             this->input = end + 1;
-            return Ok(res);
+            return ftl::Ok(res);
         }
 
         // Deserializer trait
@@ -139,21 +147,23 @@ namespace serde_json::de {
             if (TRY(this->next_char()) == '{') {
                 auto value = TRY(visitor.visit_map(CommaSeparated(*this)));
                 if (TRY(this->next_char()) == '}') {
-                    return Ok(value);
+                    return ftl::Ok(value);
                 } else {
-                    return Err(Error::ExpectedMapEnd());
+                    return ftl::Err(Error::ExpectedMapEnd());
                 }
             } else {
-                return Err(Error::ExpectedMap());
+                return ftl::Err(Error::ExpectedMap());
             }
         }
         template<typename V>
         Result<typename V::Value>
         deserialize_struct(
-            const char *_name,
-            const fst::str _fields[],
+            const char *name,
+            const fst::str fields[],
             V visitor
         ) {
+            (void)name;
+            (void)fields;
             return deserialize_map(visitor);
         }
         struct CommaSeparated {
@@ -166,27 +176,30 @@ namespace serde_json::de {
 
             // MapAccess trait
             template<typename K>
-            Result<fst::option::Option<K>> next_key_seed(K seed) {
+            Result<ftl::Option<K>> next_key_seed(K seed) {
+                (void)seed;
                 if (TRY(this->de.peek_char()) == '}') {
-                    return Ok(fst::option::Option<K>(fst::option::None()));
+                    return ftl::Ok(ftl::Option<K>(ftl::None()));
                 }
                 if (!this->first && TRY(this->de.next_char()) != ',') {
-                    return Err(Error::ExpectedMapComma());
+                    return ftl::Err(Error::ExpectedMapComma());
                 }
                 this->first = false;
-                return Ok(fst::option::Option<K>(fst::option::Some(TRY(
-                                    serde::de::Deserialize<K>::deserialize(this->de)))));
+                return serde::de::Deserialize<K>::deserialize(this->de).map(ftl::Some<K>);
+                // return ftl::Ok(ftl::Option<K>(ftl::Some(TRY(
+                //                     serde::de::Deserialize<K>::deserialize(this->de)))));
             }
             template<typename V>
             Result<V> next_value_seed(V seed) {
+                (void)seed;
                 if (TRY(this->de.next_char()) != ':') {
-                    return Err(Error::ExpectedMapColon());
+                    return ftl::Err(Error::ExpectedMapColon());
                 }
                 return serde::de::Deserialize<V>::deserialize(this->de);
             }
 
             template<typename K>
-            Result<fst::option::Option<K>> next_key() {
+            Result<ftl::Option<K>> next_key() {
                 return next_key_seed(K());
             }
             template<typename V>

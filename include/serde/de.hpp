@@ -4,6 +4,8 @@
 #include "fst/fst.hpp"
 #include <concepts>
 
+#include <ftl.hpp>
+
 namespace serde {
 namespace de {
     struct Unexpected {
@@ -64,7 +66,7 @@ namespace de {
                  && requires(Self err,
                              const char *msg,
                              Unexpected unexp,
-                             const fst::usize len,
+                             const size_t len,
                              const fst::str field,
                              const fst::str expected[]) {
         { Self::custom(msg) } -> std::same_as<Self>;
@@ -90,8 +92,8 @@ namespace detail::archetypes::de {
 
         static Error invalid_type(serde::de::Unexpected);
         static Error invalid_value(serde::de::Unexpected);
-        static Error invalid_length(fst::usize);
-        template<fst::usize N>
+        static Error invalid_length(size_t);
+        template<size_t N>
         static Error unknown_field(const fst::str, const fst::str[N]);
         static Error missing_field(const fst::str);
         static Error duplicate_field(const fst::str);
@@ -100,28 +102,28 @@ namespace detail::archetypes::de {
         using Error = Error;
 
         template<typename K>
-        fst::result::Result<fst::option::Option<typename K::Value>, Error>
+        ftl::Result<ftl::Option<typename K::Value>, Error>
         next_key_seed(K);
     };
     template<typename T>
     struct Visitor {
         using Value = T;
 
-        fst::result::Result<Value, Error> visit_bool(bool);
+        ftl::Result<Value, Error> visit_bool(bool);
 
-        fst::result::Result<Value, Error> visit_char(char);
+        ftl::Result<Value, Error> visit_char(char);
 
-        fst::result::Result<Value, Error> visit_short(short);
-        fst::result::Result<Value, Error> visit_int(int);
-        fst::result::Result<Value, Error> visit_long(long);
-        fst::result::Result<Value, Error> visit_long_long(long long);
+        ftl::Result<Value, Error> visit_short(short);
+        ftl::Result<Value, Error> visit_int(int);
+        ftl::Result<Value, Error> visit_long(long);
+        ftl::Result<Value, Error> visit_long_long(long long);
 
-        fst::result::Result<Value, Error> visit_float(float);
-        fst::result::Result<Value, Error> visit_double(double);
+        ftl::Result<Value, Error> visit_float(float);
+        ftl::Result<Value, Error> visit_double(double);
 
-        fst::result::Result<Value, Error> visit_str(fst::str);
+        ftl::Result<Value, Error> visit_str(fst::str);
 
-        fst::result::Result<Value, Error> visit_map(MapAccess);
+        ftl::Result<Value, Error> visit_map(MapAccess);
     };
     struct Deserializer {
         using Error = Error;
@@ -147,25 +149,25 @@ namespace de {
         typename V::Value;
         requires Error<E>;
         { visitor.visit_bool(Bool) } ->
-        std::same_as<fst::result::Result<typename V::Value, E>>;
+        std::same_as<ftl::Result<typename V::Value, E>>;
         { visitor.visit_char(Char) } ->
-        std::same_as<fst::result::Result<typename V::Value, E>>;
+        std::same_as<ftl::Result<typename V::Value, E>>;
         { visitor.visit_short(Short) } ->
-        std::same_as<fst::result::Result<typename V::Value, E>>;
+        std::same_as<ftl::Result<typename V::Value, E>>;
         { visitor.visit_int(Int) } ->
-        std::same_as<fst::result::Result<typename V::Value, E>>;
+        std::same_as<ftl::Result<typename V::Value, E>>;
         { visitor.visit_long(Long) } ->
-        std::same_as<fst::result::Result<typename V::Value, E>>;
+        std::same_as<ftl::Result<typename V::Value, E>>;
         { visitor.visit_long_long(LongLong) } ->
-        std::same_as<fst::result::Result<typename V::Value, E>>;
+        std::same_as<ftl::Result<typename V::Value, E>>;
         { visitor.visit_float(Float) } ->
-        std::same_as<fst::result::Result<typename V::Value, E>>;
+        std::same_as<ftl::Result<typename V::Value, E>>;
         { visitor.visit_double(Double) } ->
-        std::same_as<fst::result::Result<typename V::Value, E>>;
+        std::same_as<ftl::Result<typename V::Value, E>>;
         { visitor.visit_str(Str) } ->
-        std::same_as<fst::result::Result<typename V::Value, E>>;
+        std::same_as<ftl::Result<typename V::Value, E>>;
         { visitor.visit_map(map) } ->
-        std::same_as<fst::result::Result<typename V::Value, E>>;
+        std::same_as<ftl::Result<typename V::Value, E>>;
     };
 
     template<typename D>
@@ -176,38 +178,38 @@ namespace de {
              const fst::str fields[]) {
         requires fst::error::Error<typename D::Error>;
         { deserializer.deserialize_any(visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
 
         { deserializer.deserialize_bool(visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
 
         { deserializer.deserialize_short(visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
         { deserializer.deserialize_int(visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
         { deserializer.deserialize_long(visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
         { deserializer.deserialize_long_long(visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
 
         { deserializer.deserialize_ushort(visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
         { deserializer.deserialize_uint(visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
         { deserializer.deserialize_ulong(visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
         { deserializer.deserialize_ulong_long(visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
 
         { deserializer.deserialize_str(visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
         { deserializer.deserialize_identifier(visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
 
         { deserializer.deserialize_map(visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
         { deserializer.deserialize_struct(name, fields, visitor) } -> std::same_as<
-        fst::result::Result<typename decltype(visitor)::Value, typename D::Error>>;
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
     };
 }
 
@@ -218,14 +220,14 @@ namespace de {
     template<>
     struct Deserialize<int> {
         template<Deserializer D>
-        static fst::result::Result<int, typename D::Error>
+        static ftl::Result<int, typename D::Error>
         deserialize(D &deserializer) {
             struct IntVisitor :
                 detail::archetypes::de::Visitor<int> {
                 using Value = int;
-                fst::result::Result<Value, typename D::Error>
+                ftl::Result<Value, typename D::Error>
                 visit_int(int value) {
-                    return fst::result::Ok(value);
+                    return ftl::Ok(value);
                 }
             };
             return deserializer.deserialize_int(IntVisitor{});
@@ -235,14 +237,14 @@ namespace de {
     template<>
     struct Deserialize<fst::str> {
         template<Deserializer D>
-        static fst::result::Result<fst::str, typename D::Error>
+        static ftl::Result<fst::str, typename D::Error>
         deserialize(D &deserializer) {
             struct StrVisitor :
                 detail::archetypes::de::Visitor<fst::str> {
                 using Value = fst::str;
-                fst::result::Result<Value, typename D::Error>
+                ftl::Result<Value, typename D::Error>
                 visit_str(fst::str value) {
-                    return fst::result::Ok(value);
+                    return ftl::Ok(value);
                 }
             };
             return deserializer.deserialize_str(StrVisitor{});
@@ -254,7 +256,7 @@ namespace de {
     template<typename T, typename D = detail::archetypes::de::Deserializer>
     concept Deserializable = requires(D deserializer) {
         { Deserialize<T>::deserialize(deserializer) }
-        -> std::same_as<fst::result::Result<T, typename D::Error>>;
+        -> std::same_as<ftl::Result<T, typename D::Error>>;
     };
     /* static_assert(Deserializer<detail::archetypes::de::Deserializer>); */
 }
