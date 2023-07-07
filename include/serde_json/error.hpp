@@ -83,8 +83,8 @@ namespace serde_json::error {
         }
         // NOTE: idfk how to check this with a concept
         template<fst::usize N>
-        static Error unknown_field(const fst::str field,
-                const fst::str (&expected)[N]) {
+        static Error unknown_field(const ftl::str field,
+                const ftl::str (&expected)[N]) {
             std::stringstream msg;
             msg << "unknown field `" << field << "`, ";
             if (N == 0) {
@@ -101,12 +101,12 @@ namespace serde_json::error {
             }
             return msg.str().c_str();
         }
-        static Error missing_field(const fst::str field) {
+        static Error missing_field(const ftl::str field) {
             std::stringstream msg;
             msg << "missing field: `" << field << '`';
             return msg.str().c_str();
         }
-        static Error duplicate_field(const fst::str field) {
+        static Error duplicate_field(const ftl::str field) {
             std::stringstream msg;
             msg << "duplicate field: `" << field << '`';
             return msg.str().c_str();

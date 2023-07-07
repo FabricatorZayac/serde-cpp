@@ -22,7 +22,7 @@ DESERIALIZE(RGB, r, g, b);
 
 struct ColoredText {
     RGB color;
-    fst::str text;
+    ftl::str text;
     DEBUG_OSTREAM(ColoredText, color, text)
 };
 SERIALIZE(ColoredText, color, text);

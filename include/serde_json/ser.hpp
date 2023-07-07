@@ -44,14 +44,14 @@ namespace serde_json::ser {
             return ftl::Ok();
         }
 
-        Result<Ok> serialize_str(const fst::str &value) {
+        Result<Ok> serialize_str(const ftl::str &value) {
             this->output += "\"";
             this->output += value;
             this->output += "\"";
             return ftl::Ok();
         }
         Result<SerializeStruct *>
-        serialize_struct(const fst::str &name, const fst::usize len) {
+        serialize_struct(const ftl::str &name, const fst::usize len) {
             (void)name;
             (void)len;
             this->output += "{";
@@ -59,11 +59,11 @@ namespace serde_json::ser {
         }
         template<serde::ser::Serializable T>
         Result<void>
-        serialize_field(const fst::str &key, const T &value) {
+        serialize_field(const ftl::str &key, const T &value) {
             if (output.back() != '{') {
                 this->output += ",";
             }
-            serde::ser::Serialize<fst::str>::serialize(key, *this).unwrap();
+            serde::ser::Serialize<ftl::str>::serialize(key, *this).unwrap();
             this->output += ":";
             serde::ser::Serialize<T>::serialize(value, *this).unwrap();
             return ftl::Ok();

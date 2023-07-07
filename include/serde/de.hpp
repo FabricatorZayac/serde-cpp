@@ -9,25 +9,96 @@
 namespace serde {
 namespace de {
     struct Unexpected {
-        DATA_INITIALIZER_TYPES((Bool, T),
-                               (Unsigned, U),
-                               (Signed, V),
-                               (Float, W),
-                               (Char, X),
-                               (Str, Y),
-                               (Unit),
-                               (Map),
-                               (Other, Z));
-        DATA(Unexpected,
-                (Bool, bool),
-                (Unsigned, unsigned long long),
-                (Signed, long long),
-                (Float, double),
-                (Char, char),
-                (Str, fst::str),
-                (Unit),
-                (Map),
-                (Other, fst::str));
+        static Unexpected Bool(bool Bool) { return Unexpected { .tag = Tag::Bool, .Bool_val = Bool }; }
+        static Unexpected Unsigned(unsigned long long Unsigned) { return Unexpected { .tag = Tag::Unsigned, .Unsigned_val = Unsigned }; }
+        static Unexpected Signed(long long Signed) { return Unexpected { .tag = Tag::Signed, .Signed_val = Signed }; }
+        static Unexpected Float(float Float) { return Unexpected { .tag = Tag::Float, .Float_val = Float }; }
+        static Unexpected Char(char Char) { return Unexpected { .tag = Tag::Char, .Char_val = Char }; }
+        static Unexpected Str(ftl::str Str) { return Unexpected { .tag = Tag::Str, .Str_val = Str }; }
+        static Unexpected Unit() { return Unexpected { .tag = Tag::Unit }; }
+        static Unexpected Map() { return Unexpected { .tag = Tag::Unit }; }
+        static Unexpected Other(ftl::str Other) { return Unexpected { .tag = Tag::Other, .Other_val = Other }; }
+
+        // Unexpected(const Unexpected &source)
+        //     : tag(source.tag) {
+        //     switch (source.tag) {
+        //     case Tag ::Bool:
+        //       new (&this->Bool_val) bool(source.Bool_val);
+        //       break;
+        //     case Tag ::Unsigned:
+        //       new (&this->Unsigned_val) unsigned long long(source.Unsigned_val);
+        //       break;
+        //     case Tag ::Signed:
+        //       new (&this->Signed_val) long long(source.Signed_val);
+        //       break;
+        //     case Tag ::Float:
+        //       new (&this->Float_val) double(source.Float_val);
+        //       break;
+        //     case Tag ::Char:
+        //       new (&this->Char_val) char(source.Char_val);
+        //       break;
+        //     case Tag ::Str:
+        //       new (&this->Str_val) ftl ::str(source.Str_val);
+        //       break;
+        //     case Tag ::Unit:
+        //       break;
+        //     case Tag ::Map:
+        //       break;
+        //     case Tag ::Other:
+        //       new (&this->Other_val) ftl ::str(source.Other_val);
+        //       break;
+        //     }
+        // }
+
+        ~Unexpected() {
+            switch (this->tag) {
+            case Tag ::Bool:
+                fst ::drop(this->Bool_val);
+                break;
+            case Tag ::Unsigned:
+                fst ::drop(this->Unsigned_val);
+                break;
+            case Tag ::Signed:
+                fst ::drop(this->Signed_val);
+                break;
+            case Tag ::Float:
+                fst ::drop(this->Float_val);
+                break;
+            case Tag ::Char:
+                fst ::drop(this->Char_val);
+                break;
+            case Tag ::Str:
+                fst ::drop(this->Str_val);
+                break;
+            case Tag ::Unit:
+                break;
+            case Tag ::Map:
+                break;
+            case Tag ::Other:
+                fst ::drop(this->Other_val);
+                break;
+            }
+        }
+        enum class Tag {
+            Bool,
+            Unsigned,
+            Signed,
+            Float,
+            Char,
+            Str,
+            Unit,
+            Map,
+            Other,
+        } tag;
+        union {
+            bool Bool_val;
+            unsigned long long Unsigned_val;
+            long long Signed_val;
+            double Float_val;
+            char Char_val;
+            ftl::str Str_val;
+            ftl::str Other_val;
+        };
         friend std::ostream &operator<<(std::ostream &out, const Unexpected &unexp) {
             match(unexp) {{
                 of(Bool, (b)) {
@@ -67,8 +138,8 @@ namespace de {
                              const char *msg,
                              Unexpected unexp,
                              const size_t len,
-                             const fst::str field,
-                             const fst::str expected[]) {
+                             const ftl::str field,
+                             const ftl::str expected[]) {
         { Self::custom(msg) } -> std::same_as<Self>;
         { Self::invalid_type(unexp) } -> std::same_as<Self>;
         { Self::invalid_value(unexp) } -> std::same_as<Self>;
@@ -94,9 +165,9 @@ namespace detail::archetypes::de {
         static Error invalid_value(serde::de::Unexpected);
         static Error invalid_length(size_t);
         template<size_t N>
-        static Error unknown_field(const fst::str, const fst::str[N]);
-        static Error missing_field(const fst::str);
-        static Error duplicate_field(const fst::str);
+        static Error unknown_field(const ftl::str, const ftl::str[N]);
+        static Error missing_field(const ftl::str);
+        static Error duplicate_field(const ftl::str);
     };
     struct MapAccess {
         using Error = Error;
@@ -121,7 +192,7 @@ namespace detail::archetypes::de {
         ftl::Result<Value, Error> visit_float(float);
         ftl::Result<Value, Error> visit_double(double);
 
-        ftl::Result<Value, Error> visit_str(fst::str);
+        ftl::Result<Value, Error> visit_str(ftl::str);
 
         ftl::Result<Value, Error> visit_map(MapAccess);
     };
@@ -144,7 +215,7 @@ namespace de {
              long long LongLong,
              float Float,
              double Double,
-             fst::str Str,
+             ftl::str Str,
              detail::archetypes::de::MapAccess map) {
         typename V::Value;
         requires Error<E>;
@@ -175,7 +246,7 @@ namespace de {
     requires(D deserializer,
              detail::archetypes::de::Visitor<void> visitor,
              const char *name,
-             const fst::str fields[]) {
+             const ftl::str fields[]) {
         requires fst::error::Error<typename D::Error>;
         { deserializer.deserialize_any(visitor) } -> std::same_as<
         ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
@@ -217,6 +288,20 @@ namespace de {
     template<typename T>
     struct Deserialize;
 
+    template<typename T>
+    struct DeserializeSeed;
+
+    template<typename T>
+    struct DeserializeSeed<ftl::PhantomData<T>> {
+        using Value = T;
+
+        template<typename D>
+        static ftl::Result<T, typename D::Error> deserialize(const ftl::PhantomData<T> &self, D &deserializer) {
+            (void)self;
+            return Deserialize<T>::deserialize(deserializer);
+        }
+    };
+
     template<>
     struct Deserialize<int> {
         template<Deserializer D>
@@ -235,15 +320,15 @@ namespace de {
     };
 
     template<>
-    struct Deserialize<fst::str> {
+    struct Deserialize<ftl::str> {
         template<Deserializer D>
-        static ftl::Result<fst::str, typename D::Error>
+        static ftl::Result<ftl::str, typename D::Error>
         deserialize(D &deserializer) {
             struct StrVisitor :
-                detail::archetypes::de::Visitor<fst::str> {
-                using Value = fst::str;
+                detail::archetypes::de::Visitor<ftl::str> {
+                using Value = ftl::str;
                 ftl::Result<Value, typename D::Error>
-                visit_str(fst::str value) {
+                visit_str(ftl::str value) {
                     return ftl::Ok(value);
                 }
             };
@@ -252,13 +337,18 @@ namespace de {
     };
 }
 
-namespace de {
+namespace de::concepts {
     template<typename T, typename D = detail::archetypes::de::Deserializer>
-    concept Deserializable = requires(D deserializer) {
+    concept Deserialize = requires(D &deserializer) {
         { Deserialize<T>::deserialize(deserializer) }
         -> std::same_as<ftl::Result<T, typename D::Error>>;
     };
-    /* static_assert(Deserializer<detail::archetypes::de::Deserializer>); */
+
+    // template<typename T, typename D = detail::archetypes::de::Deserializer>
+    // concept DeserializeSeed = requires(const T &seed, D &deserializer) {
+    //     { DeserializeSeed<T>::deserialize(seed, deserializer) }
+    //     -> std::same_as<ftl::Result<T, typename D::Error>>;
+    // };
 }
 }
 

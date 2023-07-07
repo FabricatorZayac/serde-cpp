@@ -74,7 +74,7 @@ namespace serde::de {                                                         \
                         });                                                   \
             }                                                                 \
         };                                                                    \
-        constexpr static fst::str FIELDS[] = {                                \
+        constexpr static ftl::str FIELDS[] = {                                \
             FOREACH(FIELD_NAME, __VA_RGS__)                                   \
         };                                                                    \
         enum class Field { __VA_ARGS__ };                                     \
@@ -87,7 +87,7 @@ namespace serde::de {                                                         \
         deserialize(D &deserializer) {                                        \
             struct FieldVisitor : detail::archetypes::de::Visitor<Field> {    \
                 ftl::Result<Value, typename D::Error>                 \
-                visit_str(fst::str value) {                                   \
+                visit_str(ftl::str value) {                                   \
                     FOREACH(FIELD_VISITOR, __VA_ARGS__)                       \
                     return ftl::Err(D::Error::unknown_field(          \
                                 value, Deserialize<TYPE>::FIELDS));           \

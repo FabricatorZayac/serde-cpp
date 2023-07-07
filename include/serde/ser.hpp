@@ -27,7 +27,7 @@ namespace detail::archetypes::ser {
 
         template<typename T>
         ftl::Result<Ok, Error>
-        serialize_field(const fst::str, const T &value);
+        serialize_field(const ftl::str, const T &value);
         
         ftl::Result<Ok, Error> end();
     };
@@ -48,9 +48,9 @@ namespace detail::archetypes::ser {
         ftl::Result<Ok, Error> serialize_float(const float&);
         ftl::Result<Ok, Error> serialize_double(const double&);
 
-        ftl::Result<Ok, Error> serialize_str(const fst::str &);
+        ftl::Result<Ok, Error> serialize_str(const ftl::str &);
         ftl::Result<SerializeStruct *, Error>
-        serialize_struct(const fst::str &, const fst::usize);
+        serialize_struct(const ftl::str &, const fst::usize);
     };
     struct Serializable;
 }
@@ -59,7 +59,7 @@ namespace ser {
     template<typename S>
     concept SerializeStruct =
     requires(S serializer,
-             const fst::str &key,
+             const ftl::str &key,
              const detail::archetypes::ser::Serializable &value) {
         typename S::Ok;
         requires ser::Error<typename S::Error>;
@@ -79,8 +79,8 @@ namespace ser {
              const long long &LongLong,
              const float &Float,
              const double &Double,
-             const fst::str &Str,
-             const fst::str &name,
+             const ftl::str &Str,
+             const ftl::str &name,
              fst::usize len) {
         typename S::Ok;
         requires SerializeStruct<typename S::SerializeStruct>;
@@ -184,10 +184,10 @@ namespace ser {
     };
 
     template<>
-    struct Serialize<fst::str> {
+    struct Serialize<ftl::str> {
         template<Serializer S>
         static ftl::Result<typename S::Ok, typename S::Error>
-        serialize(const fst::str &self, S &serializer) {
+        serialize(const ftl::str &self, S &serializer) {
             return serializer.serialize_str(self);
         }
     };

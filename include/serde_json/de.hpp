@@ -70,11 +70,11 @@ namespace serde_json::de {
             T res = TRY(this->parse_unsigned<T>());
             return ftl::Ok(neg ? -res : res);
         }
-        Result<fst::str> parse_string() {
+        Result<ftl::str> parse_string() {
             if (TRY(this->next_char()) != '"') return ftl::Err(Error::ExpectedString());
             const char *end = strchr(this->input, '"');
             if (end == NULL) return ftl::Err(Error::Eof());
-            fst::str res(this->input, end - this->input);
+            ftl::str res(this->input, end - this->input);
             this->input = end + 1;
             return ftl::Ok(res);
         }
@@ -159,7 +159,7 @@ namespace serde_json::de {
         Result<typename V::Value>
         deserialize_struct(
             const char *name,
-            const fst::str fields[],
+            const ftl::str fields[],
             V visitor
         ) {
             (void)name;
@@ -175,36 +175,36 @@ namespace serde_json::de {
             CommaSeparated(Deserializer &de) : de(de), first(true) {}
 
             // MapAccess trait
+            // template<serde::de::concepts::DeserializeSeed K>
             template<typename K>
-            Result<ftl::Option<K>> next_key_seed(K seed) {
+                Result<ftl::Option<typename serde::de::DeserializeSeed<K>::Value>> next_key_seed(K seed) {
                 (void)seed;
                 if (TRY(this->de.peek_char()) == '}') {
-                    return ftl::Ok(ftl::Option<K>(ftl::None()));
+                    return ftl::Ok(ftl::Option<typename serde::de::DeserializeSeed<K>::Value>(ftl::None()));
                 }
                 if (!this->first && TRY(this->de.next_char()) != ',') {
                     return ftl::Err(Error::ExpectedMapComma());
                 }
                 this->first = false;
-                return serde::de::Deserialize<K>::deserialize(this->de).map(ftl::Some<K>);
-                // return ftl::Ok(ftl::Option<K>(ftl::Some(TRY(
-                //                     serde::de::Deserialize<K>::deserialize(this->de)))));
+                return serde::de::DeserializeSeed<K>::deserialize(seed, this->de).map(ftl::Some<typename serde::de::DeserializeSeed<K>::Value>);
             }
+            // template<serde::de::concepts::DeserializeSeed V>
             template<typename V>
-            Result<V> next_value_seed(V seed) {
+            Result<typename serde::de::DeserializeSeed<V>::Value> next_value_seed(V seed) {
                 (void)seed;
                 if (TRY(this->de.next_char()) != ':') {
                     return ftl::Err(Error::ExpectedMapColon());
                 }
-                return serde::de::Deserialize<V>::deserialize(this->de);
+                return serde::de::DeserializeSeed<V>::deserialize(seed, this->de);
             }
 
             template<typename K>
             Result<ftl::Option<K>> next_key() {
-                return next_key_seed(K());
+                return next_key_seed(ftl::PhantomData<K>{});
             }
             template<typename V>
             Result<V> next_value() {
-                return next_value_seed(V());
+                return next_value_seed(ftl::PhantomData<V>{});
             }
         };
     };
