@@ -4,12 +4,20 @@
 #include <string>
 #include <assert.h>
 
-#include "fst/fst.hpp"
 #include "serde/de.hpp"
 #include "serde_json/error.hpp"
 #include "serde_json/json.hpp"
 
 #include <ftl.hpp>
+
+#define _DEBUG_FIELD(x) << ", " << #x << ": " << self.x
+
+#define DEBUG_OSTREAM(T, FIRST, ...) \
+    friend std::ostream &operator<<(std::ostream &out, T &self) { \
+        return out << #T << " { " << #FIRST << ": " << self.FIRST \
+        FOREACH(_DEBUG_FIELD, __VA_ARGS__) << " }";               \
+    }
+
 
 struct RGB {
     int r;

@@ -50,7 +50,7 @@ namespace detail::archetypes::ser {
 
         ftl::Result<Ok, Error> serialize_str(const ftl::str &);
         ftl::Result<SerializeStruct *, Error>
-        serialize_struct(const ftl::str &, const fst::usize);
+        serialize_struct(const ftl::str &, const size_t);
     };
     struct Serializable;
 }
@@ -81,7 +81,7 @@ namespace ser {
              const double &Double,
              const ftl::str &Str,
              const ftl::str &name,
-             fst::usize len) {
+             size_t len) {
         typename S::Ok;
         requires SerializeStruct<typename S::SerializeStruct>;
         requires Error<typename S::Error>;

@@ -19,66 +19,6 @@ namespace de {
         static Unexpected Map() { return Unexpected { .tag = Tag::Unit }; }
         static Unexpected Other(ftl::str Other) { return Unexpected { .tag = Tag::Other, .Other_val = Other }; }
 
-        // Unexpected(const Unexpected &source)
-        //     : tag(source.tag) {
-        //     switch (source.tag) {
-        //     case Tag ::Bool:
-        //       new (&this->Bool_val) bool(source.Bool_val);
-        //       break;
-        //     case Tag ::Unsigned:
-        //       new (&this->Unsigned_val) unsigned long long(source.Unsigned_val);
-        //       break;
-        //     case Tag ::Signed:
-        //       new (&this->Signed_val) long long(source.Signed_val);
-        //       break;
-        //     case Tag ::Float:
-        //       new (&this->Float_val) double(source.Float_val);
-        //       break;
-        //     case Tag ::Char:
-        //       new (&this->Char_val) char(source.Char_val);
-        //       break;
-        //     case Tag ::Str:
-        //       new (&this->Str_val) ftl ::str(source.Str_val);
-        //       break;
-        //     case Tag ::Unit:
-        //       break;
-        //     case Tag ::Map:
-        //       break;
-        //     case Tag ::Other:
-        //       new (&this->Other_val) ftl ::str(source.Other_val);
-        //       break;
-        //     }
-        // }
-
-        ~Unexpected() {
-            switch (this->tag) {
-            case Tag ::Bool:
-                fst ::drop(this->Bool_val);
-                break;
-            case Tag ::Unsigned:
-                fst ::drop(this->Unsigned_val);
-                break;
-            case Tag ::Signed:
-                fst ::drop(this->Signed_val);
-                break;
-            case Tag ::Float:
-                fst ::drop(this->Float_val);
-                break;
-            case Tag ::Char:
-                fst ::drop(this->Char_val);
-                break;
-            case Tag ::Str:
-                fst ::drop(this->Str_val);
-                break;
-            case Tag ::Unit:
-                break;
-            case Tag ::Map:
-                break;
-            case Tag ::Other:
-                fst ::drop(this->Other_val);
-                break;
-            }
-        }
         enum class Tag {
             Bool,
             Unsigned,

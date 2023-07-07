@@ -76,13 +76,13 @@ namespace serde_json::error {
             msg << "invalid value: " << unexp;
             return msg.str().c_str();
         }
-        static Error invalid_length(const fst::usize len) {
+        static Error invalid_length(const size_t len) {
             std::stringstream msg;
             msg << "invalid length: " << len;
             return msg.str().c_str();
         }
         // NOTE: idfk how to check this with a concept
-        template<fst::usize N>
+        template<size_t N>
         static Error unknown_field(const ftl::str field,
                 const ftl::str (&expected)[N]) {
             std::stringstream msg;
@@ -91,7 +91,7 @@ namespace serde_json::error {
                 msg << "there are no fields";
             } else {
                 msg << "expected one of [";
-                for (fst::usize i = 0; i < N; i++) {
+                for (size_t i = 0; i < N; i++) {
                     msg << expected[i];
                     if (i != N - 1)
                         msg << ", ";

@@ -51,7 +51,7 @@ namespace serde_json::ser {
             return ftl::Ok();
         }
         Result<SerializeStruct *>
-        serialize_struct(const ftl::str &name, const fst::usize len) {
+        serialize_struct(const ftl::str &name, const size_t len) {
             (void)name;
             (void)len;
             this->output += "{";
