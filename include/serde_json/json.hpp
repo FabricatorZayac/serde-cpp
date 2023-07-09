@@ -2,15 +2,14 @@
 #define JSON_H_
 
 #include "fst/fst.hpp"
-#include "serde/serde.hpp"
 #include "serde_json/ser.hpp"
 #include "serde_json/de.hpp"
 #include <cstring>
 
 namespace serde_json {
     template<serde::ser::Serializable T>
-    error::Result<std::string> to_string(T &value) {
-        ser::Serializer serializer;
+    error::Result<std::string> to_string(const T &value) {
+        serde_json::ser::Serializer serializer;
         serde::ser::Serialize<T>::serialize(value, serializer).unwrap();
         return ftl::Ok(serializer.output);
     }

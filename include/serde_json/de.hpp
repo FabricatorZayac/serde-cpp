@@ -2,7 +2,6 @@
 #include <cstring>
 
 #include "serde/de.hpp"
-#include "serde/serde.hpp"
 #include "fst/fst.hpp"
 #include "serde_json/error.hpp"
 

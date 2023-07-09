@@ -3,7 +3,8 @@
 
 #include "fst/cursed_macros.h"
 #include "fst/fst.hpp"
-#include "serde/serde.hpp"
+#include "serde/ser.hpp"
+#include "serde/de.hpp"
 #include <concepts>
 #include <sstream>
 #include <ftl.hpp>

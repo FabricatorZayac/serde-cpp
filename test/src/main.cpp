@@ -4,15 +4,14 @@
 #include <string>
 #include <assert.h>
 
-#include "serde/de.hpp"
+#include <ftl.hpp>
+
+#include "serde/macros.hpp"
 #include "serde_json/error.hpp"
 #include "serde_json/json.hpp"
 
-#include <ftl.hpp>
-
 #define _DEBUG_FIELD(x) << ", " << #x << ": " << self.x
-
-#define DEBUG_OSTREAM(T, FIRST, ...)                                             \
+#define DEBUG_STRUCT(T, FIRST, ...)                                              \
     inline std::ostream &operator<<(ftl::Debug &&debug, T &self) {               \
         return debug.out << #T << " { " << #FIRST << ": " << debug << self.FIRST \
         FOREACH(_DEBUG_FIELD, __VA_ARGS__) << " }";                              \
@@ -25,7 +24,7 @@ struct RGB {
 };
 SERIALIZE(RGB, r, g, b);
 DESERIALIZE(RGB, r, g, b);
-DEBUG_OSTREAM(RGB, r, g, b)
+DEBUG_STRUCT(RGB, r, g, b);
 
 struct ColoredText {
     RGB color;
@@ -33,7 +32,7 @@ struct ColoredText {
 };
 SERIALIZE(ColoredText, color, text);
 DESERIALIZE(ColoredText, color, text);
-DEBUG_OSTREAM(ColoredText, color, text)
+DEBUG_STRUCT(ColoredText, color, text);
 
 /* static_assert(serde::de::Visitor< */
 /*         serde::de::Deserialize<RGB>::Visitor, */
@@ -45,19 +44,23 @@ int main() {
     RGB color{0xFF, 0x00, 0xAC};
     ColoredText foo{color, "bar"};
 
-    cout << serde_json::to_string(color).unwrap() << endl;
-    cout << serde_json::to_string(foo).unwrap() << endl;
+    cout << serde_json::to_string(color).unwrap() << endl
+         << serde_json::to_string(foo).unwrap() << endl
+         << serde_json::to_string(5).unwrap() << endl
+         << serde_json::to_string(ftl::Slice{69, 420}).unwrap() << endl
+         << serde_json::to_string((int[]){420, 69}).unwrap() << endl
+         << serde_json::to_string(ftl::Slice<const RGB>{{255, 255, 255}, {0, 0, 0}}).unwrap() << endl;
 
     switch (auto ___self =
                 serde_json::from_str<RGB>(R"({"r":0,"g":255,"b":123})");
             ___self.tag) {
     case decltype(___self)::Tag::Ok: {
         auto res = ___self.unwrap();
-        std::cout << ftl::debug << res << std::endl;
+        cout << ftl::debug << res << endl;
     } break;
     case decltype(___self)::Tag::Err: {
         auto err = ___self.unwrap_err();
-        std::cout << "Error: " << err.description() << std::endl;
+        cout << "Error: " << err.description() << endl;
     }
     }
 
@@ -66,11 +69,11 @@ int main() {
             ___self.tag) {
     case decltype(___self)::Tag::Ok: {
         auto res = ___self.unwrap();
-        std::cout << ftl::debug << res << std::endl;
+        cout << ftl::debug << res << endl;
     } break;
     case decltype(___self)::Tag::Err: {
         auto err = ___self.unwrap_err();
-        std::cout << "Error: " << err.description() << std::endl;
+        cout << "Error: " << err.description() << endl;
     }
     }
 

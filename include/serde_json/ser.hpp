@@ -1,11 +1,12 @@
 #ifndef JSON_SER_H_
 #define JSON_SER_H_
 
+#include <functional>
 #include <string>
 
 #include "fst/fst.hpp"
 #include "error.hpp"
-#include "serde/serde.hpp"
+#include "serde/ser.hpp"
 
 namespace serde_json::ser {
     using error::Result;
@@ -17,6 +18,7 @@ namespace serde_json::ser {
         using Error = error::Error;
 
         using SerializeStruct = Serializer;
+        using SerializeSeq = Serializer;
 
         Result<Ok> serialize_bool(const bool &value) {
             this->output += value ? "true" : "false";
@@ -50,18 +52,19 @@ namespace serde_json::ser {
             this->output += "\"";
             return ftl::Ok();
         }
-        Result<SerializeStruct *>
+
+        Result<SerializeStruct &>
         serialize_struct(const ftl::str &name, const size_t len) {
             (void)name;
             (void)len;
             this->output += "{";
-            return ftl::Ok(this);
+            return ftl::Ok(std::ref(*this));
         }
         template<serde::ser::Serializable T>
         Result<void>
         serialize_field(const ftl::str &key, const T &value) {
             if (output.back() != '{') {
-                this->output += ",";
+                this->output += ',';
             }
             serde::ser::Serialize<ftl::str>::serialize(key, *this).unwrap();
             this->output += ":";
@@ -72,9 +75,26 @@ namespace serde_json::ser {
             this->output += "}";
             return ftl::Ok();
         }
+
+        Result<SerializeSeq &>
+        serialize_seq(ftl::Option<size_t> len) {
+            (void)len;
+            output += '[';
+            return ftl::Ok(std::ref(*this));
+        }
+        template<serde::ser::Serializable T>
+        Result<void> serialize_element(const T &value) {
+            if (output.back() != '[') output += ',';
+            return serde::ser::Serialize<T>::serialize(value, *this);
+        }
+        Result<SerializeSeq::Ok> end_seq() {
+            this->output += "]";
+            return ftl::Ok();
+        }
     };
     static_assert(serde::ser::Serializer<Serializer>);
     static_assert(serde::ser::SerializeStruct<Serializer>);
+    static_assert(serde::ser::SerializeSeq<Serializer>);
 }
 
 #endif
