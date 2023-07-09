@@ -5,6 +5,7 @@
 #include <assert.h>
 
 #include <ftl.hpp>
+#include <vector>
 
 #include "serde/macros.hpp"
 #include "serde_json/error.hpp"
@@ -12,7 +13,7 @@
 
 #define _DEBUG_FIELD(x) << ", " << #x << ": " << self.x
 #define DEBUG_STRUCT(T, FIRST, ...)                                              \
-    inline std::ostream &operator<<(ftl::Debug &&debug, T &self) {               \
+    inline std::ostream &operator<<(ftl::Debug &&debug, const T &self) {         \
         return debug.out << #T << " { " << #FIRST << ": " << debug << self.FIRST \
         FOREACH(_DEBUG_FIELD, __VA_ARGS__) << " }";                              \
     }
@@ -49,7 +50,12 @@ int main() {
          << serde_json::to_string(5).unwrap() << endl
          << serde_json::to_string(ftl::Slice{69, 420}).unwrap() << endl
          << serde_json::to_string((int[]){420, 69}).unwrap() << endl
-         << serde_json::to_string(ftl::Slice<const RGB>{{255, 255, 255}, {0, 0, 0}}).unwrap() << endl;
+         << serde_json::to_string(ftl::Slice<const RGB>{
+                 {255, 255, 255},
+                 {  0,   0,   0},
+             }).unwrap() << endl
+         << serde_json::to_string(ftl::Some(69)).unwrap() << endl
+         << serde_json::to_string(ftl::None()).unwrap() << endl;
 
     switch (auto ___self =
                 serde_json::from_str<RGB>(R"({"r":0,"g":255,"b":123})");

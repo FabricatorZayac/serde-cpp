@@ -235,7 +235,6 @@ namespace ser {
         }
     };
 
-    // TODO: test and add SerializeSeq to Serializer concept
     template<Serializable T>
     struct Serialize<ftl::Slice<T>> {
         template<Serializer S>
@@ -249,8 +248,8 @@ namespace ser {
             return state.end_seq();
         }
     };
-    
-    template<typename T, size_t N>
+
+    template<Serializable T, size_t N>
     struct Serialize<T[N]> {
         template<Serializer S>
         static ftl::Result<typename S::Ok, typename S::Error>
@@ -261,6 +260,25 @@ namespace ser {
                 TRY(state.serialize_element(e));
             }
             return state.end_seq();
+        }
+    };
+    
+    template<Serializable T>
+    struct Serialize<ftl::Option<T>> {
+        template<Serializer S>
+        static ftl::Result<typename S::Ok, typename S::Error>
+        serialize(const ftl::Option<T> &self, S &serializer) {
+            if (self.is_some()) return serializer.serialize_some(self.unwrap());
+            return serializer.serialize_none();
+        }
+    };
+    template<>
+    struct Serialize<ftl::Option<void>> {
+        template<Serializer S>
+        static ftl::Result<typename S::Ok, typename S::Error>
+        serialize(const ftl::Option<void> &self, S &serializer) {
+            (void)self;
+            return serializer.serialize_none();
         }
     };
 }

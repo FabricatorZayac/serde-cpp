@@ -6,6 +6,7 @@
 
 #include "fst/fst.hpp"
 #include "error.hpp"
+#include "ftl.hpp"
 #include "serde/ser.hpp"
 
 namespace serde_json::ser {
@@ -20,15 +21,28 @@ namespace serde_json::ser {
         using SerializeStruct = Serializer;
         using SerializeSeq = Serializer;
 
+        Result<Ok> serialize_unit() {
+            output += "null";
+            return ftl::Ok();
+        }
+
+        Result<Ok> serialize_none() {
+            return serialize_unit();
+        }
+        template<serde::ser::Serializable T>
+        Result<Ok> serialize_some(const T &value) {
+            return serde::ser::Serialize<T>::serialize(value, *this);
+        }
+
         Result<Ok> serialize_bool(const bool &value) {
-            this->output += value ? "true" : "false";
+            output += value ? "true" : "false";
             return ftl::Ok();
         }
 
         Result<Ok> serialize_char(const char &value) {
-            this->output += "\"";
-            this->output += value;
-            this->output += "\"";
+            output += "\"";
+            output += value;
+            output += "\"";
             return ftl::Ok();
         }
 
@@ -36,20 +50,20 @@ namespace serde_json::ser {
         Result<Ok> serialize_int(const int &value) { return serialize_long_long(value); }
         Result<Ok> serialize_long(const long &value) { return serialize_long_long(value); }
         Result<Ok> serialize_long_long(const long long &value) {
-            this->output += std::to_string(value);
+            output += std::to_string(value);
             return ftl::Ok();
         }
 
         Result<Ok> serialize_float(const float &value) { return serialize_double(value); }
         Result<Ok> serialize_double(const double &value) {
-            this->output += std::to_string(value);
+            output += std::to_string(value);
             return ftl::Ok();
         }
 
         Result<Ok> serialize_str(const ftl::str &value) {
-            this->output += "\"";
-            this->output += value;
-            this->output += "\"";
+            output += "\"";
+            output += value;
+            output += "\"";
             return ftl::Ok();
         }
 
@@ -57,22 +71,21 @@ namespace serde_json::ser {
         serialize_struct(const ftl::str &name, const size_t len) {
             (void)name;
             (void)len;
-            this->output += "{";
+            output += "{";
             return ftl::Ok(std::ref(*this));
         }
         template<serde::ser::Serializable T>
         Result<void>
         serialize_field(const ftl::str &key, const T &value) {
             if (output.back() != '{') {
-                this->output += ',';
+                output += ',';
             }
-            serde::ser::Serialize<ftl::str>::serialize(key, *this).unwrap();
-            this->output += ":";
-            serde::ser::Serialize<T>::serialize(value, *this).unwrap();
-            return ftl::Ok();
+            TRY(serde::ser::Serialize<ftl::str>::serialize(key, *this));
+            output += ":";
+            return serde::ser::Serialize<T>::serialize(value, *this);
         }
         Result<SerializeStruct::Ok> end() {
-            this->output += "}";
+            output += "}";
             return ftl::Ok();
         }
 
