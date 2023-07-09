@@ -79,13 +79,13 @@ namespace de {
                              Unexpected unexp,
                              const size_t len,
                              const ftl::str field,
-                             const ftl::str expected[]) {
+                             const ftl::Slice<const ftl::str> &expected) {
         { Self::custom(msg) } -> std::same_as<Self>;
         { Self::invalid_type(unexp) } -> std::same_as<Self>;
         { Self::invalid_value(unexp) } -> std::same_as<Self>;
         { Self::invalid_length(len) } -> std::same_as<Self>;
         // NOTE: idk how to check the template
-        /* { Self::unknown_field(field, expected) } -> std::convertible_to<Self>; */
+        { Self::unknown_field(field, expected) } -> std::convertible_to<Self>;
         { Self::missing_field(field) } -> std::same_as<Self>;
         { Self::duplicate_field(field) } -> std::same_as<Self>;
     };

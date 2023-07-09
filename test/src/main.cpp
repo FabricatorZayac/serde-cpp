@@ -12,68 +12,65 @@
 
 #define _DEBUG_FIELD(x) << ", " << #x << ": " << self.x
 
-#define DEBUG_OSTREAM(T, FIRST, ...) \
-    friend std::ostream &operator<<(std::ostream &out, T &self) { \
-        return out << #T << " { " << #FIRST << ": " << self.FIRST \
-        FOREACH(_DEBUG_FIELD, __VA_ARGS__) << " }";               \
+#define DEBUG_OSTREAM(T, FIRST, ...)                                             \
+    inline std::ostream &operator<<(ftl::Debug &&debug, T &self) {               \
+        return debug.out << #T << " { " << #FIRST << ": " << debug << self.FIRST \
+        FOREACH(_DEBUG_FIELD, __VA_ARGS__) << " }";                              \
     }
-
 
 struct RGB {
     int r;
     int g;
     int b;
-    DEBUG_OSTREAM(RGB, r, g, b)
 };
 SERIALIZE(RGB, r, g, b);
 DESERIALIZE(RGB, r, g, b);
+DEBUG_OSTREAM(RGB, r, g, b)
 
 struct ColoredText {
     RGB color;
     ftl::str text;
-    DEBUG_OSTREAM(ColoredText, color, text)
 };
 SERIALIZE(ColoredText, color, text);
 DESERIALIZE(ColoredText, color, text);
+DEBUG_OSTREAM(ColoredText, color, text)
 
 /* static_assert(serde::de::Visitor< */
 /*         serde::de::Deserialize<RGB>::Visitor, */
 /*         serde_json::error::Error>); */
 
+using namespace std;
+
 int main() {
     RGB color{0xFF, 0x00, 0xAC};
     ColoredText foo{color, "bar"};
 
-    std::cout << serde_json::to_string(color).unwrap() << std::endl;
-    std::cout << serde_json::to_string(foo).unwrap() << std::endl;
+    cout << serde_json::to_string(color).unwrap() << endl;
+    cout << serde_json::to_string(foo).unwrap() << endl;
 
     switch (auto ___self =
-                serde_json ::from_str<RGB>(R"({"r":0,"g":255,"b":123})");
+                serde_json::from_str<RGB>(R"({"r":0,"g":255,"b":123})");
             ___self.tag) {
-      { break; }
-    case decltype(___self)::Tag ::Ok: {
-      auto res = ___self.unwrap();
-      { std::cout << res << std::endl; }
-      break;
-    }
-    case decltype(___self)::Tag ::Err: {
-      auto err = ___self.unwrap_err();
-      { std::cout << "Error: " << err.description() << std::endl; }
+    case decltype(___self)::Tag::Ok: {
+        auto res = ___self.unwrap();
+        std::cout << ftl::debug << res << std::endl;
+    } break;
+    case decltype(___self)::Tag::Err: {
+        auto err = ___self.unwrap_err();
+        std::cout << "Error: " << err.description() << std::endl;
     }
     }
 
     switch (auto ___self = serde_json ::from_str<ColoredText>(
                 R"({"color":{"r":5,"g":25,"b":30},"text":"baz"})");
             ___self.tag) {
-      { break; }
-    case decltype(___self)::Tag ::Ok: {
-      auto res = ___self.unwrap();
-      { std::cout << res << std::endl; }
-      break;
-    }
-    case decltype(___self)::Tag ::Err: {
-      auto err = ___self.unwrap_err();
-      { std::cout << "Error: " << err.description() << std::endl; }
+    case decltype(___self)::Tag::Ok: {
+        auto res = ___self.unwrap();
+        std::cout << ftl::debug << res << std::endl;
+    } break;
+    case decltype(___self)::Tag::Err: {
+        auto err = ___self.unwrap_err();
+        std::cout << "Error: " << err.description() << std::endl;
     }
     }
 

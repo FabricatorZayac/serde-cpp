@@ -1,3 +1,5 @@
+#include "cursed_macros.h"
+
 #ifndef DATATYPE_H_
 #define DATATYPE_H_
 

@@ -82,22 +82,15 @@ namespace serde_json::error {
             return msg.str().c_str();
         }
         // NOTE: idfk how to check this with a concept
-        template<size_t N>
         static Error unknown_field(const ftl::str field,
-                const ftl::str (&expected)[N]) {
+                const ftl::Slice<const ftl::str> &expected) {
             std::stringstream msg;
             msg << "unknown field `" << field << "`, ";
-            if (N == 0) {
+            if (expected.len() == 0) {
                 msg << "there are no fields";
             } else {
-                msg << "expected one of [";
-                for (size_t i = 0; i < N; i++) {
-                    msg << expected[i];
-                    if (i != N - 1)
-                        msg << ", ";
-                    else
-                        msg << "]";
-                }
+                msg << "expected one of ";
+                msg << ftl::debug << expected;
             }
             return msg.str().c_str();
         }

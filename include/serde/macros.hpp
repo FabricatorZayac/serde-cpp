@@ -75,7 +75,7 @@ namespace serde::de {                                                         \
             }                                                                 \
         };                                                                    \
         constexpr static ftl::str FIELDS[] = {                                \
-            FOREACH(FIELD_NAME, __VA_RGS__)                                   \
+            FOREACH(FIELD_NAME, __VA_ARGS__)                                   \
         };                                                                    \
         enum class Field { __VA_ARGS__ };                                     \
     };                                                                        \
