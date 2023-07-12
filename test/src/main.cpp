@@ -18,22 +18,22 @@
         FOREACH(_DEBUG_FIELD, __VA_ARGS__) << " }";                              \
     }
 
+#define DEBUG(SIG) DEBUG_STRUCT SIG
+
+#define DERIVE(SIG, ...) APPLYEACH(SIG, __VA_ARGS__)
+
 struct RGB {
     int r;
     int g;
     int b;
 };
-SERIALIZE(RGB, r, g, b);
-DESERIALIZE(RGB, r, g, b);
-DEBUG_STRUCT(RGB, r, g, b);
+DERIVE((RGB, r, g, b), DEBUG, SERIALIZE, DESERIALIZE)
 
 struct ColoredText {
     RGB color;
     ftl::str text;
 };
-SERIALIZE(ColoredText, color, text);
-DESERIALIZE(ColoredText, color, text);
-DEBUG_STRUCT(ColoredText, color, text);
+DERIVE((ColoredText, color, text), DEBUG, SERIALIZE, DESERIALIZE)
 
 /* static_assert(serde::de::Visitor< */
 /*         serde::de::Deserialize<RGB>::Visitor, */

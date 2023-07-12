@@ -110,7 +110,7 @@ namespace serde_json::error {
         Error(Tag tag) : tag(tag) {}
         std::string msg;
     };
-    static_assert(serde::de::Error<Error>);
+    static_assert(serde::de::concepts::Error<Error>);
 
     template<typename T>
     using Result = ftl::Result<T, Error>;

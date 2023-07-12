@@ -1,10 +1,13 @@
 #ifndef SERDE_DE_H_
 #define SERDE_DE_H_
 
-#include "fst/fst.hpp"
 #include <concepts>
+#include <cstddef>
 
 #include <ftl.hpp>
+
+#include "fst/fst.hpp"
+#include "fst/datatype_macros.hpp"
 
 namespace serde {
 namespace de {
@@ -72,28 +75,29 @@ namespace de {
         }
     };
 
-    template<typename Self>
-    concept Error = fst::error::Error<Self>
-                 && requires(Self err,
-                             const char *msg,
-                             Unexpected unexp,
-                             const size_t len,
-                             const ftl::str field,
-                             const ftl::Slice<const ftl::str> &expected) {
-        { Self::custom(msg) } -> std::same_as<Self>;
-        { Self::invalid_type(unexp) } -> std::same_as<Self>;
-        { Self::invalid_value(unexp) } -> std::same_as<Self>;
-        { Self::invalid_length(len) } -> std::same_as<Self>;
-        // NOTE: idk how to check the template
-        { Self::unknown_field(field, expected) } -> std::convertible_to<Self>;
-        { Self::missing_field(field) } -> std::same_as<Self>;
-        { Self::duplicate_field(field) } -> std::same_as<Self>;
-    };
-    template<typename A>
-    concept MapAccess =
-    requires(A map) {
-        requires Error<typename A::Error>;
-    };
+    namespace concepts {
+        template<typename Self>
+        concept Error = fst::error::Error<Self>
+                     && requires(Self err,
+                                 const char *msg,
+                                 Unexpected unexp,
+                                 const size_t len,
+                                 const ftl::str field,
+                                 const ftl::Slice<const ftl::str> &expected) {
+            { Self::custom(msg) } -> std::same_as<Self>;
+            { Self::invalid_type(unexp) } -> std::same_as<Self>;
+            { Self::invalid_value(unexp) } -> std::same_as<Self>;
+            { Self::invalid_length(len) } -> std::same_as<Self>;
+            { Self::unknown_field(field, expected) } -> std::convertible_to<Self>;
+            { Self::missing_field(field) } -> std::same_as<Self>;
+            { Self::duplicate_field(field) } -> std::same_as<Self>;
+        };
+        template<typename A>
+        concept MapAccess =
+        requires(A map) {
+            requires Error<typename A::Error>;
+        };
+    }
 }
 
 namespace detail::archetypes::de {
@@ -104,8 +108,7 @@ namespace detail::archetypes::de {
         static Error invalid_type(serde::de::Unexpected);
         static Error invalid_value(serde::de::Unexpected);
         static Error invalid_length(size_t);
-        template<size_t N>
-        static Error unknown_field(const ftl::str, const ftl::str[N]);
+        static Error unknown_field(const ftl::str, const ftl::Slice<ftl::str>);
         static Error missing_field(const ftl::str);
         static Error duplicate_field(const ftl::str);
     };
@@ -139,10 +142,11 @@ namespace detail::archetypes::de {
     struct Deserializer {
         using Error = Error;
     };
-    struct Deserializable;
+    struct Deserialize;
+    struct DeserializeSeed;
 }
 
-namespace de {
+namespace de::concepts {
     // NOTE: doesn't work
     template<typename V, typename E>
     concept Visitor =
@@ -158,7 +162,7 @@ namespace de {
              ftl::str Str,
              detail::archetypes::de::MapAccess map) {
         typename V::Value;
-        requires Error<E>;
+        requires concepts::Error<E>;
         { visitor.visit_bool(Bool) } ->
         std::same_as<ftl::Result<typename V::Value, E>>;
         { visitor.visit_char(Char) } ->
@@ -187,7 +191,7 @@ namespace de {
              detail::archetypes::de::Visitor<void> visitor,
              const char *name,
              const ftl::str fields[]) {
-        requires fst::error::Error<typename D::Error>;
+        requires concepts::Error<typename D::Error>;
         { deserializer.deserialize_any(visitor) } -> std::same_as<
         ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
 
@@ -227,7 +231,6 @@ namespace de {
 namespace de {
     template<typename T>
     struct Deserialize;
-
     template<typename T>
     struct DeserializeSeed;
 
@@ -236,19 +239,34 @@ namespace de {
         using Value = T;
 
         template<typename D>
-        static ftl::Result<T, typename D::Error> deserialize(const ftl::PhantomData<T> &self, D &deserializer) {
+        static ftl::Result<T, typename D::Error>
+        deserialize(const ftl::PhantomData<T> &self, D &deserializer) {
             (void)self;
             return Deserialize<T>::deserialize(deserializer);
         }
     };
 
     template<>
+    struct Deserialize<short> {
+        template<concepts::Deserializer D>
+        static ftl::Result<short, typename D::Error>
+        deserialize(D &deserializer) {
+            struct ShortVisitor {
+                using Value = short;
+                ftl::Result<Value, typename D::Error>
+                visit_short(int value) {
+                    return ftl::Ok(value);
+                }
+            };
+            return deserializer.deserialize_short(ShortVisitor{});
+        }
+    };
+    template<>
     struct Deserialize<int> {
-        template<Deserializer D>
+        template<concepts::Deserializer D>
         static ftl::Result<int, typename D::Error>
         deserialize(D &deserializer) {
-            struct IntVisitor :
-                detail::archetypes::de::Visitor<int> {
+            struct IntVisitor {
                 using Value = int;
                 ftl::Result<Value, typename D::Error>
                 visit_int(int value) {
@@ -258,14 +276,43 @@ namespace de {
             return deserializer.deserialize_int(IntVisitor{});
         }
     };
+    template<>
+    struct Deserialize<long> {
+        template<concepts::Deserializer D>
+        static ftl::Result<long, typename D::Error>
+        deserialize(D &deserializer) {
+            struct LongVisitor {
+                using Value = long;
+                ftl::Result<Value, typename D::Error>
+                visit_long(long value) {
+                    return ftl::Ok(value);
+                }
+            };
+            return deserializer.deserialize_long(LongVisitor{});
+        }
+    };
+    template<>
+    struct Deserialize<long long> {
+        template<concepts::Deserializer D>
+        static ftl::Result<long long, typename D::Error>
+        deserialize(D &deserializer) {
+            struct LongLongVisitor {
+                using Value = long long;
+                ftl::Result<Value, typename D::Error>
+                visit_long_long(long long value) {
+                    return ftl::Ok(value);
+                }
+            };
+            return deserializer.deserialize_long_long(LongLongVisitor{});
+        }
+    };
 
     template<>
     struct Deserialize<ftl::str> {
-        template<Deserializer D>
+        template<concepts::Deserializer D>
         static ftl::Result<ftl::str, typename D::Error>
         deserialize(D &deserializer) {
-            struct StrVisitor :
-                detail::archetypes::de::Visitor<ftl::str> {
+            struct StrVisitor {
                 using Value = ftl::str;
                 ftl::Result<Value, typename D::Error>
                 visit_str(ftl::str value) {

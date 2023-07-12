@@ -99,53 +99,66 @@ namespace serde_json::de {
         }
         template<typename V>
         Result<typename V::Value> deserialize_bool(V visitor) {
-            return visitor.visit_bool(TRY(this->parse_bool()));
+            return visitor.visit_bool(TRY(parse_bool()));
         }
         template<typename V>
         Result<typename V::Value> deserialize_short(V visitor) {
-            return visitor.visit_short(TRY(this->parse_signed<short>()));
+            return visitor.visit_short(TRY(parse_signed<short>()));
         }
         template<typename V>
         Result<typename V::Value> deserialize_int(V visitor) {
-            return visitor.visit_int(TRY(this->parse_signed<int>()));
+            return visitor.visit_int(TRY(parse_signed<int>()));
         }
         template<typename V>
         Result<typename V::Value> deserialize_long(V visitor) {
-            return visitor.visit_long(TRY(this->parse_signed<long>()));
+            return visitor.visit_long(TRY(parse_signed<long>()));
         }
         template<typename V>
         Result<typename V::Value> deserialize_long_long(V visitor) {
-            return visitor.visit_long_long(TRY(this->parse_signed<long long>()));
+            return visitor.visit_long_long(TRY(parse_signed<long long>()));
         }
         template<typename V>
         Result<typename V::Value> deserialize_ushort(V visitor) {
-            return visitor.visit_short(TRY(this->parse_unsigned<unsigned short>()));
+            return visitor.visit_short(TRY(parse_unsigned<unsigned short>()));
         }
         template<typename V>
         Result<typename V::Value> deserialize_uint(V visitor) {
-            return visitor.visit_int(TRY(this->parse_unsigned<unsigned int>()));
+            return visitor.visit_int(TRY(parse_unsigned<unsigned int>()));
         }
         template<typename V>
         Result<typename V::Value> deserialize_ulong(V visitor) {
-            return visitor.visit_long(TRY(this->parse_unsigned<unsigned long>()));
+            return visitor.visit_long(TRY(parse_unsigned<unsigned long>()));
         }
         template<typename V>
         Result<typename V::Value> deserialize_ulong_long(V visitor) {
-            return visitor.visit_long_long(TRY(this->parse_unsigned<unsigned long long>()));
+            return visitor.visit_long_long(TRY(parse_unsigned<unsigned long long>()));
         }
         template<typename V>
         Result<typename V::Value> deserialize_str(V visitor) {
-            return visitor.visit_str(TRY(this->parse_string()));
+            return visitor.visit_str(TRY(parse_string()));
         }
         template<typename V>
         Result<typename V::Value> deserialize_identifier(V visitor) {
             return this->deserialize_str(visitor);
         }
         template<typename V>
+        Result<typename V::Value> deserialize_seq(V visitor) {
+            if (TRY(next_char()) == '[') {
+                auto value = visitor.visit_seq(CommaSeparated(*this));
+                if (TRY(next_char()) == ']') {
+                    return ftl::Ok(value);
+                } else {
+                    return ftl::Err(Error::ExpectedArrayEnd());
+                }
+            } else {
+                return ftl::Err(Error::ExpectedArray());
+            }
+        }
+        template<typename V>
         Result<typename V::Value> deserialize_map(V visitor) {
-            if (TRY(this->next_char()) == '{') {
+            if (TRY(next_char()) == '{') {
                 auto value = TRY(visitor.visit_map(CommaSeparated(*this)));
-                if (TRY(this->next_char()) == '}') {
+                if (TRY(next_char()) == '}') {
                     return ftl::Ok(value);
                 } else {
                     return ftl::Err(Error::ExpectedMapEnd());
@@ -174,27 +187,39 @@ namespace serde_json::de {
             CommaSeparated(Deserializer &de) : de(de), first(true) {}
 
             // MapAccess trait
-            // template<serde::de::concepts::DeserializeSeed K>
-            template<typename K>
-                Result<ftl::Option<typename serde::de::DeserializeSeed<K>::Value>> next_key_seed(K seed) {
-                (void)seed;
-                if (TRY(this->de.peek_char()) == '}') {
-                    return ftl::Ok(ftl::Option<typename serde::de::DeserializeSeed<K>::Value>(ftl::None()));
+            template<typename K, typename Seed = serde::de::DeserializeSeed<K>>
+            Result<ftl::Option<typename Seed::Value>>
+            next_key_seed(K seed) {
+                if (TRY(de.peek_char()) == '}') {
+                    return ftl::Ok(ftl::Option<typename Seed::Value>(ftl::None()));
                 }
-                if (!this->first && TRY(this->de.next_char()) != ',') {
+                if (!first && TRY(de.next_char()) != ',') {
                     return ftl::Err(Error::ExpectedMapComma());
                 }
-                this->first = false;
-                return serde::de::DeserializeSeed<K>::deserialize(seed, this->de).map(ftl::Some<typename serde::de::DeserializeSeed<K>::Value>);
+                first = false;
+                return serde::de::DeserializeSeed<K>::deserialize(seed, de)
+                    .map(ftl::Some<typename Seed::Value>);
             }
-            // template<serde::de::concepts::DeserializeSeed V>
-            template<typename V>
-            Result<typename serde::de::DeserializeSeed<V>::Value> next_value_seed(V seed) {
-                (void)seed;
-                if (TRY(this->de.next_char()) != ':') {
+            template<typename V, typename Seed = serde::de::DeserializeSeed<V>>
+            Result<typename Seed::Value> next_value_seed(V seed) {
+                if (TRY(de.next_char()) != ':') {
                     return ftl::Err(Error::ExpectedMapColon());
                 }
-                return serde::de::DeserializeSeed<V>::deserialize(seed, this->de);
+                return Seed::deserialize(seed, de);
+            }
+            // SeqAccess
+            template<typename T, typename Seed = serde::de::DeserializeSeed<T>>
+            Result<ftl::Option<typename Seed::Value>>
+            next_element_seed(T seed) {
+                if (TRY(de.peek_char()) == ']') {
+                    return ftl::Ok(ftl::None());
+                }
+                if (!first && TRY(de.next_char()) != ',') {
+                    return ftl::Err(Error::ExpectedArrayComma());
+                }
+                first = false;
+                return Seed::deserialize(seed, de)
+                    .map(ftl::Some<typename Seed::Value>);
             }
 
             template<typename K>
@@ -205,7 +230,15 @@ namespace serde_json::de {
             Result<V> next_value() {
                 return next_value_seed(ftl::PhantomData<V>{});
             }
+            template<typename T>
+            Result<ftl::Option<T>> next_element() {
+                return next_value_seed(ftl::PhantomData<T>{});
+            }
+            ftl::Option<size_t> size_hint() {
+                return ftl::None();
+            }
         };
+        static_assert(serde::de::concepts::MapAccess<CommaSeparated>);
     };
-    static_assert(serde::de::Deserializer<Deserializer>);
+    static_assert(serde::de::concepts::Deserializer<Deserializer>);
 }
