@@ -42,7 +42,7 @@ case Field::FIELD:                                                   \
     break;
 
 #define MAP_VISITOR_RETURN(FIELD)                       \
-.FIELD = TRY(FIELD.ok_or_else([](){                     \
+.FIELD = TRY(FIELD.ok_or_else([]{                       \
                 return V::Error::missing_field(#FIELD); \
             })),
 

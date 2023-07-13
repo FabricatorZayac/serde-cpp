@@ -6,6 +6,7 @@
 #include "serde/ser.hpp"
 #include "serde/de.hpp"
 #include <concepts>
+#include <ostream>
 #include <sstream>
 #include <ftl.hpp>
 
@@ -24,7 +25,7 @@
 
 namespace serde_json::error {
     struct Error {
-        std::string description() {
+        std::string description() const {
             switch (tag) {
             case Tag::Message:
                 return msg;
@@ -104,6 +105,10 @@ namespace serde_json::error {
             std::stringstream msg;
             msg << "duplicate field: `" << field << '`';
             return msg.str().c_str();
+        }
+
+        friend std::ostream &operator<<(ftl::Debug &&debug, const Error &self) {
+            return debug.out << self.description();
         }
     private:
         Error(const char *msg) : tag(Tag::Message), msg(msg) {};

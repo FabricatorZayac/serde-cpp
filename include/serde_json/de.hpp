@@ -144,7 +144,7 @@ namespace serde_json::de {
         template<typename V>
         Result<typename V::Value> deserialize_seq(V visitor) {
             if (TRY(next_char()) == '[') {
-                auto value = visitor.visit_seq(CommaSeparated(*this));
+                auto value = TRY(visitor.visit_seq(CommaSeparated(*this)));
                 if (TRY(next_char()) == ']') {
                     return ftl::Ok(value);
                 } else {
@@ -197,7 +197,7 @@ namespace serde_json::de {
                     return ftl::Err(Error::ExpectedMapComma());
                 }
                 first = false;
-                return serde::de::DeserializeSeed<K>::deserialize(seed, de)
+                return Seed::deserialize(seed, de)
                     .map(ftl::Some<typename Seed::Value>);
             }
             template<typename V, typename Seed = serde::de::DeserializeSeed<V>>
@@ -212,7 +212,7 @@ namespace serde_json::de {
             Result<ftl::Option<typename Seed::Value>>
             next_element_seed(T seed) {
                 if (TRY(de.peek_char()) == ']') {
-                    return ftl::Ok(ftl::None());
+                    return ftl::Ok(ftl::Option<typename Seed::Value>(ftl::None()));
                 }
                 if (!first && TRY(de.next_char()) != ',') {
                     return ftl::Err(Error::ExpectedArrayComma());
@@ -232,13 +232,11 @@ namespace serde_json::de {
             }
             template<typename T>
             Result<ftl::Option<T>> next_element() {
-                return next_value_seed(ftl::PhantomData<T>{});
-            }
-            ftl::Option<size_t> size_hint() {
-                return ftl::None();
+                return next_element_seed(ftl::PhantomData<T>{});
             }
         };
         static_assert(serde::de::concepts::MapAccess<CommaSeparated>);
+        // static_assert(serde::de::concepts::SeqAccess<CommaSeparated>);
     };
     static_assert(serde::de::concepts::Deserializer<Deserializer>);
 }

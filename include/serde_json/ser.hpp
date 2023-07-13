@@ -29,7 +29,7 @@ namespace serde_json::ser {
         Result<Ok> serialize_none() {
             return serialize_unit();
         }
-        template<serde::ser::Serializable T>
+        template<serde::ser::concepts::Serialize T>
         Result<Ok> serialize_some(const T &value) {
             return serde::ser::Serialize<T>::serialize(value, *this);
         }
@@ -74,7 +74,7 @@ namespace serde_json::ser {
             output += "{";
             return ftl::Ok(std::ref(*this));
         }
-        template<serde::ser::Serializable T>
+        template<serde::ser::concepts::Serialize T>
         Result<void>
         serialize_field(const ftl::str &key, const T &value) {
             if (output.back() != '{') {
@@ -95,7 +95,7 @@ namespace serde_json::ser {
             output += '[';
             return ftl::Ok(std::ref(*this));
         }
-        template<serde::ser::Serializable T>
+        template<serde::ser::concepts::Serialize T>
         Result<void> serialize_element(const T &value) {
             if (output.back() != '[') output += ',';
             return serde::ser::Serialize<T>::serialize(value, *this);

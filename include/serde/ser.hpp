@@ -1,12 +1,14 @@
 #ifndef SERDE_SER_H_
 #define SERDE_SER_H_
 
+#include <array>
 #include <concepts>
 #include <string>
 
 #include "fst/fst.hpp"
 #include <ftl.hpp>
 #include <type_traits>
+#include <vector>
 
 namespace serde {
 namespace ser {
@@ -67,7 +69,7 @@ namespace detail::archetypes::ser {
         ftl::Result<SerializeSeq &, Error>
         serialize_seq(ftl::Option<size_t>);
     };
-    struct Serializable;
+    struct Serialize;
 }
 
 namespace ser {
@@ -75,7 +77,7 @@ namespace ser {
     concept SerializeStruct =
     requires(S serializer,
              const ftl::str &key,
-             const detail::archetypes::ser::Serializable &value) {
+             const detail::archetypes::ser::Serialize &value) {
         typename S::Ok;
         requires ser::Error<typename S::Error>;
 
@@ -87,7 +89,7 @@ namespace ser {
     template<typename S>
     concept SerializeSeq =
     requires(S serializer,
-             const detail::archetypes::ser::Serializable &value) {
+             const detail::archetypes::ser::Serialize &value) {
         typename S::Ok;
         requires ser::Error<typename S::Error>;
 
@@ -152,21 +154,20 @@ namespace ser {
     struct Serialize;
 
     template<>
-    struct Serialize<detail::archetypes::ser::Serializable> {
+    struct Serialize<detail::archetypes::ser::Serialize> {
         template<Serializer S>
         static ftl::Result<typename S::Ok, typename S::Error>
-        serialize(const detail::archetypes::ser::Serializable &self, S &serializer);
+        serialize(const detail::archetypes::ser::Serialize &self, S &serializer);
     };
 
-    template<typename T, typename S = detail::archetypes::ser::Serializer>
-    concept Serializable =
-    requires(const T &self, S &serializer) {
-        { Serialize<T>::serialize(self, serializer) }
-        -> std::same_as<ftl::Result<typename S::Ok, typename S::Error>>;
-    } or requires(const T &self, S &serializer) {
-        { Serialize<std::decay_t<T>>::serialize(self, serializer) }
-        -> std::same_as<ftl::Result<typename S::Ok, typename S::Error>>;
-    };
+    namespace concepts {
+        template<typename T, typename S = detail::archetypes::ser::Serializer>
+        concept Serialize =
+        requires(const T &self, S &serializer) {
+            { Serialize<std::remove_cv_t<T>>::serialize(self, serializer) }
+            -> std::same_as<ftl::Result<typename S::Ok, typename S::Error>>;
+        };
+    }
 
     template<>
     struct Serialize<bool> {
@@ -235,7 +236,7 @@ namespace ser {
         }
     };
 
-    template<Serializable T>
+    template<concepts::Serialize T>
     struct Serialize<ftl::Slice<T>> {
         template<Serializer S>
         static ftl::Result<typename S::Ok, typename S::Error>
@@ -248,8 +249,20 @@ namespace ser {
             return state.end_seq();
         }
     };
-
-    template<Serializable T, size_t N>
+    template<concepts::Serialize T>
+    struct Serialize<std::vector<T>> {
+        template<Serializer S>
+        static ftl::Result<typename S::Ok, typename S::Error>
+        serialize(const std::vector<T> &self, S &serializer) {
+            typename S::SerializeSeq &state = 
+                TRY(serializer.serialize_seq(ftl::Some(self.size())));
+            for (auto &e : self) {
+                TRY(state.serialize_element(e));
+            }
+            return state.end_seq();
+        }
+    };
+    template<concepts::Serialize T, size_t N>
     struct Serialize<T[N]> {
         template<Serializer S>
         static ftl::Result<typename S::Ok, typename S::Error>
@@ -262,8 +275,21 @@ namespace ser {
             return state.end_seq();
         }
     };
+    template<concepts::Serialize T, size_t N>
+    struct Serialize<std::array<T, N>> {
+        template<Serializer S>
+        static ftl::Result<typename S::Ok, typename S::Error>
+        serialize(const std::array<T, N> &self, S &serializer) {
+            typename S::SerializeSeq &state = 
+                TRY(serializer.serialize_seq(ftl::Some(N)));
+            for (auto &e : self) {
+                TRY(state.serialize_element(e));
+            }
+            return state.end_seq();
+        }
+    };
     
-    template<Serializable T>
+    template<concepts::Serialize T>
     struct Serialize<ftl::Option<T>> {
         template<Serializer S>
         static ftl::Result<typename S::Ok, typename S::Error>

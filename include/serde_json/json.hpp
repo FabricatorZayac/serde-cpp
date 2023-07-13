@@ -7,7 +7,7 @@
 #include <cstring>
 
 namespace serde_json {
-    template<serde::ser::Serializable T>
+    template<serde::ser::concepts::Serialize T>
     error::Result<std::string> to_string(const T &value) {
         serde_json::ser::Serializer serializer;
         serde::ser::Serialize<T>::serialize(value, serializer).unwrap();

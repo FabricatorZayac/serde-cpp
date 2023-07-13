@@ -1,3 +1,4 @@
+#include <array>
 #include <cstdio>
 #include <iostream>
 #include <ostream>
@@ -40,48 +41,29 @@ DERIVE((ColoredText, color, text), DEBUG, SERIALIZE, DESERIALIZE)
 /*         serde_json::error::Error>); */
 
 using namespace std;
+using namespace ftl;
 
 int main() {
     RGB color{0xFF, 0x00, 0xAC};
     ColoredText foo{color, "bar"};
 
-    cout << serde_json::to_string(color).unwrap() << endl
-         << serde_json::to_string(foo).unwrap() << endl
-         << serde_json::to_string(5).unwrap() << endl
-         << serde_json::to_string(ftl::Slice{69, 420}).unwrap() << endl
-         << serde_json::to_string((int[]){420, 69}).unwrap() << endl
-         << serde_json::to_string(ftl::Slice<const RGB>{
+    cout << debug << serde_json::to_string(color) << endl
+         << debug << serde_json::to_string(foo) << endl
+         << debug << serde_json::to_string(5) << endl
+         << debug << serde_json::to_string(Slice{69, 420}) << endl
+         << debug << serde_json::to_string((int[]){420, 69}) << endl
+         << debug << serde_json::to_string(Slice<const RGB>{
                  {255, 255, 255},
                  {  0,   0,   0},
-             }).unwrap() << endl
-         << serde_json::to_string(ftl::Some(69)).unwrap() << endl
-         << serde_json::to_string(ftl::None()).unwrap() << endl;
+             }) << endl
+         << debug << serde_json::to_string(array{42, 96}) << endl
+         << debug << serde_json::to_string(vector{96, 42}) << endl
+         << debug << serde_json::to_string(Some(69)) << endl
+         << debug << serde_json::to_string(None()) << endl;
 
-    switch (auto ___self =
-                serde_json::from_str<RGB>(R"({"r":0,"g":255,"b":123})");
-            ___self.tag) {
-    case decltype(___self)::Tag::Ok: {
-        auto res = ___self.unwrap();
-        cout << ftl::debug << res << endl;
-    } break;
-    case decltype(___self)::Tag::Err: {
-        auto err = ___self.unwrap_err();
-        cout << "Error: " << err.description() << endl;
-    }
-    }
-
-    switch (auto ___self = serde_json ::from_str<ColoredText>(
-                R"({"color":{"r":5,"g":25,"b":30},"text":"baz"})");
-            ___self.tag) {
-    case decltype(___self)::Tag::Ok: {
-        auto res = ___self.unwrap();
-        cout << ftl::debug << res << endl;
-    } break;
-    case decltype(___self)::Tag::Err: {
-        auto err = ___self.unwrap_err();
-        cout << "Error: " << err.description() << endl;
-    }
-    }
+    cout << debug << serde_json::from_str<RGB>(R"({"r":0,"g":255,"b":123})") << endl;
+    cout << debug << serde_json::from_str<ColoredText>(R"({"color":{"r":5,"g":25,"b":30},"text":"baz"})") << endl;
+    cout << debug << serde_json::from_str<array<int, 2>>("[69,420]") << endl;
 
     return 0;
 }

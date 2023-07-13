@@ -1,10 +1,12 @@
 #ifndef SERDE_DE_H_
 #define SERDE_DE_H_
 
+#include <ftl.hpp>
+
+#include <array>
 #include <concepts>
 #include <cstddef>
-
-#include <ftl.hpp>
+#include <utility>
 
 #include "fst/fst.hpp"
 #include "fst/datatype_macros.hpp"
@@ -221,6 +223,8 @@ namespace de::concepts {
         { deserializer.deserialize_identifier(visitor) } -> std::same_as<
         ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
 
+        { deserializer.deserialize_seq(visitor) } -> std::same_as<
+        ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
         { deserializer.deserialize_map(visitor) } -> std::same_as<
         ftl::Result<typename decltype(visitor)::Value, typename D::Error>>;
         { deserializer.deserialize_struct(name, fields, visitor) } -> std::same_as<
@@ -321,6 +325,29 @@ namespace de {
             };
             return deserializer.deserialize_str(StrVisitor{});
         }
+    };
+
+    template<typename T, size_t N>
+    struct Deserialize<std::array<T, N>> {
+        template<concepts::Deserializer D>
+        static ftl::Result<std::array<T, N>, typename D::Error>
+        deserialize(D &deserializer) {
+            return deserializer.deserialize_seq(ArrayVisitor{});
+        }
+        struct ArrayVisitor {
+            using Value = std::array<T, N>;
+            template<typename A> // SeqAccess
+            ftl::Result<Value, typename A::Error>
+            visit_seq(A seq) {
+                std::array<T, N> arr;
+                for (size_t i = 0; i < N; i++) {
+                    ftl::Option<T> elem = TRY(seq.template next_element<T>());
+                    if (elem.is_none()) return ftl::Err(A::Error::invalid_length(i - 1));
+                    arr[i] = elem.unwrap();
+                }
+                return ftl::Ok(std::move_if_noexcept(arr));
+            }
+        };
     };
 }
 
